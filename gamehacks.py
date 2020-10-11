@@ -46,7 +46,7 @@ def ExtractTable(startpage):
             except:
                 title = title.replace('\u016b', 'u').replace('\u00e9', 'e') # \u016b=ū \u00e9=é
                 report.write(title)
-                print(title+)
+                print(title)
             line = ','
             for td in (gmpg, date, genre, platform, hkpg):
                 td = undiv(td)
