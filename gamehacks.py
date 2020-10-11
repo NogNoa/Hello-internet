@@ -32,16 +32,19 @@ def ExtractTable(startpage):
         return
     for tr in table.find_all('tr'):
         hacks = tr.find("td", attrs={'class': hackname}).find("a", href=True)
-        hkpg = home + exhref(hacks)
-        if hacks: # and CheckLang(hkpg):
+        hkpg = home + exhref(hacks).replace('&amp;', '&')
+        if hacks and CheckLang(hkpg):
             title = tr.find("td", attrs={'class': "col_1 Title"}).find("a", href=True)
             date = tr.find("td", attrs={'class': "col_4 Date"})
             genre = tr.find("td", attrs={'class': "col_5 Genre"})
             platform = tr.find("td", attrs={'class': "col_6 Platform"})
             gmpg = home + exhref(title)
             line = [undiv(td) for td in (title, gmpg, date, genre, platform, hkpg)]
+
             # title
-            line[0] = line[0].replace(',', '.').replace('\u016b', 'u').replace('\u00e9', 'e')  # \u016b=ū \u00e9=é
+            line[0] = line[0].replace(',', '.').replace('\u016b', 'u').replace('\u00e9', 'e').replace('\xe4', 'a')
+            # '\u016b'='ū' '\u00e9'='é' '\xe4'='ä'
+
             # genre
             line[3] = line[3].replace('&gt;', '>')
             line = ",".join(line)
@@ -51,13 +54,13 @@ def ExtractTable(startpage):
 
 def CheckLang(hkpg):
     soup = soupinit(hkpg)
-    languges = soup.findall('td', attrs={'class': "col_8 Lang"})
+    languges = soup.find_all('td', attrs={'class': "col_8 Lang"})
     languges = [undiv(lang) for lang in languges]
     return 'EN' in languges
 
 
 if __name__ == '__main__':
-    report = open('romhacking.csv', 'w+')
+    report = open('romtranslations.csv', 'w+')
     report.write('title,game page,date,genre,platform,translations page,\n')
 
     driver = webdriver.Firefox()
@@ -66,7 +69,7 @@ if __name__ == '__main__':
     gentable = home + "/?page=games&perpage=200&order=Date"
 
     cond = True
-    hackname = "col_10 Hacks" #"col_9 Trans"
+    hackname = "col_9 Trans"
     startpage = 1
     while cond:
         ExtractTable(startpage)
