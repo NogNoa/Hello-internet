@@ -33,7 +33,7 @@ def ExtractTable(startpage):
     for tr in table.find_all('tr'):
         hacks = tr.find("td", attrs={'class': hackname}).find("a", href=True)
         hkpg = home + exhref(hacks)
-        if hacks and CheckLang(hkpg):
+        if hacks: # and CheckLang(hkpg):
             title = tr.find("td", attrs={'class': "col_1 Title"}).find("a", href=True)
             date = tr.find("td", attrs={'class': "col_4 Date"})
             genre = tr.find("td", attrs={'class': "col_5 Genre"})
@@ -57,7 +57,7 @@ def CheckLang(hkpg):
 
 
 if __name__ == '__main__':
-    report = open('romtranslations.csv', 'w+')
+    report = open('romhacking.csv', 'w+')
     report.write('title,game page,date,genre,platform,translations page,\n')
 
     driver = webdriver.Firefox()
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     gentable = home + "/?page=games&perpage=200&order=Date"
 
     cond = True
-    hackname = "col_9 Trans"
+    hackname = "col_10 Hacks" #"col_9 Trans"
     startpage = 1
     while cond:
         ExtractTable(startpage)
