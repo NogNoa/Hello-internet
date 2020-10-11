@@ -31,40 +31,33 @@ def ExtractTable(startpage):
         cond = False
         return
     for tr in table.find_all('tr'):
-        hacks = tr.find("td", attrs={'class': "col_10 Hacks"}).find("a", href=True)
+        hacks = tr.find("td", attrs={'class': hackname}).find("a", href=True)
         hkpg = home + exhref(hacks)
-        if hacks:  # and CheckLang(hkpg):
+        if hacks and CheckLang(hkpg):
             title = tr.find("td", attrs={'class': "col_1 Title"}).find("a", href=True)
             date = tr.find("td", attrs={'class': "col_4 Date"})
             genre = tr.find("td", attrs={'class': "col_5 Genre"})
             platform = tr.find("td", attrs={'class': "col_6 Platform"})
             gmpg = home + exhref(title)
-            title = undiv(title)
-            title = title.replace('&amp;', '&')
-            try:
-                report.write(title)
-            except:
-                title = title.replace('\u016b', 'u').replace('\u00e9', 'e') # \u016b=ū \u00e9=é
-                report.write(title)
-                print(title)
-            line = ','
-            for td in (gmpg, date, genre, platform, hkpg):
-                td = undiv(td)
-                line += td + ', '
-            line = line.replace('&amp;', '&').replace('&gt;', '>')
+            line = [undiv(td) for td in (title, gmpg, date, genre, platform, hkpg)]
+            # title
+            line[0] = line[0].replace(',', '.').replace('\u016b', 'u').replace('\u00e9', 'e')  # \u016b=ū \u00e9=é
+            # genre
+            line[3] = line[3].replace('&gt;', '>')
+            line = ",".join(line)
+            line = line.replace('&amp;', '&')
             report.write(line + '\n')
 
 
 def CheckLang(hkpg):
     soup = soupinit(hkpg)
     languges = soup.findall('td', attrs={'class': "col_8 Lang"})
-    for lang in languges:
-        lang = undiv(lang)
-    return ('EN' in languges)
+    languges = [undiv(lang) for lang in languges]
+    return 'EN' in languges
 
 
 if __name__ == '__main__':
-    report = open('romhacking.csv', 'w+')
+    report = open('romtranslations.csv', 'w+')
     report.write('title,game page,date,genre,platform,translations page,\n')
 
     driver = webdriver.Firefox()
@@ -73,6 +66,7 @@ if __name__ == '__main__':
     gentable = home + "/?page=games&perpage=200&order=Date"
 
     cond = True
+    hackname = "col_9 Trans"
     startpage = 1
     while cond:
         ExtractTable(startpage)
