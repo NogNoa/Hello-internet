@@ -1,25 +1,13 @@
-from gamecube import undiv, exhref
-from selenium import webdriver
-from bs4 import BeautifulSoup
-
-
-def gethtml(url):
-    driver.get(url)
-    return driver.page_source
-
-
-def soupinit(url):
-    """ready BeutifulSoup when loading a new page"""
-    html = gethtml(url)
-    soup = BeautifulSoup(html, features="html.parser")
-    return soup
+import TableRead as HI
+# from selenium import webdriver
+# from bs4 import BeautifulSoup
 
 
 def ExtractTable(startpage):
     """extracts the information of all games from the table"""
     global cond
     page = gentable + "&startpage=" + str(startpage)
-    soup = soupinit(page)
+    soup = HI.soupinit(page)
     content = soup.find("body").find("div", attrs={"id": "wrapper"}).find("div", attrs={"id": "main"})
     # try:
     # abort = content.find("div", attrs={"class": "newsitem"}).find("div", attrs={"class": "newsbody"})
@@ -32,14 +20,14 @@ def ExtractTable(startpage):
         return
     for tr in table.find_all('tr'):
         hacks = tr.find("td", attrs={'class': hackname}).find("a", href=True)
-        hkpg = home + exhref(hacks).replace('&amp;', '&')
+        hkpg = home + HI.exhref(hacks).replace('&amp;', '&')
         if hacks and CheckLang(hkpg):
             title = tr.find("td", attrs={'class': "col_1 Title"}).find("a", href=True)
             date = tr.find("td", attrs={'class': "col_4 Date"})
             genre = tr.find("td", attrs={'class': "col_5 Genre"})
             platform = tr.find("td", attrs={'class': "col_6 Platform"})
-            gmpg = home + exhref(title)
-            line = [undiv(td) for td in (title, gmpg, date, genre, platform, hkpg)]
+            gmpg = home + HI.exhref(title)
+            line = [HI.undiv(td) for td in (title, gmpg, date, genre, platform, hkpg)]
 
             # title
             line[0] = line[0].replace(',', '.').replace('\u016b', 'u').replace('\u00e9', 'e').replace('\xe4', 'a')
@@ -53,17 +41,17 @@ def ExtractTable(startpage):
 
 
 def CheckLang(hkpg):
-    soup = soupinit(hkpg)
+    soup = HI.soupinit(hkpg)
     languges = soup.find_all('td', attrs={'class': "col_8 Lang"})
-    languges = [undiv(lang) for lang in languges]
+    languges = [HI.undiv(lang) for lang in languges]
     return 'EN' in languges
 
 
 if __name__ == '__main__':
-    report = open('romtranslations.csv', 'w+')
+    report = open('try.csv', 'w+')
     report.write('title,game page,date,genre,platform,translations page,\n')
 
-    driver = webdriver.Firefox()
+    #driver = webdriver.Firefox()
 
     home = "http://www.romhacking.net"
     gentable = home + "/?page=games&perpage=200&order=Date"
