@@ -6,6 +6,8 @@ def ExtractDate(url):
     content = soup.find("div", attrs={"class": "body pod_gameinfo_left"})
     if not content:
         content = soup.find("div", attrs={"class": "pod pod_gameinfo"})
+    if not content:
+        print("no idea where right table is", url)
     content = content.find("ul")
     li = content.find_all("li")
 
@@ -29,6 +31,7 @@ def ExtractDate(url):
 
 
 def ExtractTable(page_num):
+    global rank
     page = genpage + str(page_num)
     print('\npage:', page)
     soup = HI.soupinit(page)
@@ -36,24 +39,24 @@ def ExtractTable(page_num):
     for tr in table.find_all('tr'):
         td = tr.find_all("td")
         system, game, rank = td[1:4]
-        name = HI.undiv(game)
+        name, system, rank = HI.undiv((game, system, rank))
         game = home + HI.exhref(game)  # now a URL to game's own page
         name = name.replace(',', '.').replace('\u016b', 'u').replace('\u00e9', 'e').replace('\xe4', 'a')
         # '\u016b'='ū' '\u00e9'='é' '\xe4'='ä'
         date = ExtractDate(game)
-        line = [HI.undiv(cel) for cel in (name, system, rank, date)]
-        line = ",".join(line)
+        line = ",".join([name, system, rank, date])
         line = line.replace('&amp;', '&')
         report.write(line + '\n')
 
 
 if __name__ == '__main__':
     home = "https://gamefaqs.gamespot.com"
-    report = open(' GameFAQs.csv', 'w+')
-    genpage = home + "/games/rankings?list_type=rate&min_votes=2" + '?page='
-    Rank = 5
-    page_num = 1
+    report = open('GameFAQs.csv', 'w+')
+    genpage = home + "/games/rankings?min_votes=2&dlc=1" + '&page='
+    rank = 5
+    page_num = 0
     report.write('Name,System,rating,date,')
-    while Rank >= 3.7:
+    while rank >= 3.7:
         ExtractTable(page_num)
-        HI.driver()
+        page_num += 1
+        rank = float(rank)
