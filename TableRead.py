@@ -1,4 +1,4 @@
-from selenium import webdriver
+from selenium import webdriver, common
 from bs4 import BeautifulSoup
 
 driver = webdriver.Firefox()
@@ -38,6 +38,12 @@ def exhref(txt):
 
 def gethtml(url):
     global driver
+    """
+    try:
+        driver.implicitly_wait(0)
+    except:  # common.exceptions.InvalidSessionIdException:
+        driver = webdriver.Firefox()
+    """
     driver.get(url)
     return driver.page_source
 
