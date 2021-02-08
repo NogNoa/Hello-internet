@@ -48,9 +48,8 @@ def gethtml(url):
     return driver.page_source
 
 
-def soupinit(url):
+def soupinit(html):
     """ready BeutifulSoup when loading a new page"""
-    html = gethtml(url)
     soup = BeautifulSoup(html, features="html.parser")
     return soup
 
