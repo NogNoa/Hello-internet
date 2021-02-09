@@ -9,9 +9,9 @@ def ExtractDate(html):
     if not content:
         print("no idea where right table is", html)
     content = content.ul
-    li = content.find_all("li")
+    lii = content.find_all("li")
 
-    for pl in li:
+    for pl in lii:
         b = HI.undiv(pl.find('b'))
         if b[:3] == "Rel":  # "Release:"
             date = pl.find("a", href=True)
@@ -24,6 +24,7 @@ def ExtractDate(html):
 
     date = HI.undiv(date)
     date = date.split(' ')
+    date = [i for i in date if i != '']
     ln = len(date)
     if ln > 2:
         date = [date[1], date[0], date[2]]
@@ -34,23 +35,23 @@ def ExtractDate(html):
         if date[0][0] == 'Q':  # the first charecter of the first word is Q, a quarter rather than day.
             quart = int(date[0][1])  # the second charecter is the number of the quarter
             month = 3 * quart
-            date = [int(month), date[1]]
+            date = [str(month), date[1]]
     date = "/".join(date).replace(',', '')
     return date
 
 
-def ExtractWankers(html,name):
+def ExtractWankers(html, name):
     # wankers in actually rankers, it's a joke gimeabreak
     soup = HI.soupinit(html)
     rate_text = soup.find("div", attrs={"id": "gs_rate_avg_hint", "class": "gamespace_rate_hint"})
-    if rate_text is None:
-        open("nowankers.txt", "w+").write(name + "\n")
-        return '0'
     rate_text = HI.undiv(rate_text)
     wankers = ''
     for char in rate_text:
         if char in '0123456789':
             wankers += char
+    if wankers == '':
+        open("nowankers.txt", "w+").write(name + "\n")
+        return '0'
     return wankers
 
 
