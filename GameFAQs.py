@@ -2,7 +2,7 @@ import TableRead as HI
 
 
 def ExtractDate(html):
-    soup = HI.soupinit(html)
+    soup = HI.soupinit(html=html)
     content = soup.find("div", attrs={"class": "body pod_gameinfo_left"})
     if not content:
         content = soup.find("div", attrs={"class": "pod pod_gameinfo"})
@@ -10,16 +10,15 @@ def ExtractDate(html):
         print("no idea where right table is", html)
     content = content.ul
     lii = content.find_all("li")
-
+    date = ''
     for pl in lii:
         b = HI.undiv(pl.find('b'))
         if b[:3] == "Rel":  # "Release:"
             date = pl.find("a", href=True)
             break
-    try:
-        date
-    except NameError:
-        print("unknown date:", html)
+
+    if not date:
+        errors.write("Unknown Date:" + html)
         return "Unknown"
 
     date = HI.undiv(date)
@@ -42,7 +41,7 @@ def ExtractDate(html):
 
 def ExtractWankers(html, name):
     # wankers in actually rankers, it's a joke gimeabreak
-    soup = HI.soupinit(html)
+    soup = HI.soupinit(html=html)
     rate_text = soup.find("div", attrs={"id": "gs_rate_avg_hint", "class": "gamespace_rate_hint"})
     rate_text = HI.undiv(rate_text)
     wankers = ''
@@ -50,7 +49,7 @@ def ExtractWankers(html, name):
         if char in '0123456789':
             wankers += char
     if wankers == '':
-        open("nowankers.txt", "w+").write(name + "\n")
+        errors.write("No Wankers: " + name + "\n")
         return '0'
     return wankers
 
@@ -59,7 +58,7 @@ def ExtractTable(page_num, cutoff_wankers=0):
     global rank
     page = genpage + str(page_num)
     print('\npage:', page, rank)
-    soup = HI.soupinit(html=HI.gethtml(page))
+    soup = HI.soupinit(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
     for tr in table.find_all('tr'):
         td = tr.find_all("td")
@@ -84,6 +83,7 @@ def ExtractTable(page_num, cutoff_wankers=0):
 if __name__ == '__main__':
     home = "https://gamefaqs.gamespot.com"
     report = open('GameFAQs3.csv', 'w+')
+    errors = open("errors.log", 'w+')
     genpage = home + "/games/rankings?min_votes=2&dlc=1" + '&page='
     cutoff_rank = 3.7
     rank = 5
