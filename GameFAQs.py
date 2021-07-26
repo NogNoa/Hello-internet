@@ -77,9 +77,9 @@ def extract_genres(html):
     return genri
 
 
-def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
+def extract_table(page_num, genre_ignore=()):
     global rank
-    page = genpage + str(page_num)
+    page = genpage + '&page=' + str(page_num)
     print('\npage:', page, rank)
     soup = HI.soupinit(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
@@ -93,13 +93,11 @@ def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
         name = name.replace(',', '.').replace('ū', 'u').replace('é', 'e').replace('ä', 'a')
         # '\u016b'='ū' '\u00e9'='é' '\xe4'='ä. é appears particularly in all them pokémon games.
         game_html = HI.gethtml(game)
-        wankers = extract_wankers(game_html, name)
-        if int(wankers) < cutoff_wankers:
-            continue
         genri = extract_genres(game_html)
         for genre in genre_ignore:
             if genre in genri:
                 continue
+        wankers = extract_wankers(game_html, name)
         date = extract_date(game_html)
         line = ",".join([name, system, rank, wankers, date])
         line = line.replace('&amp;', '&')
@@ -111,12 +109,13 @@ if __name__ == '__main__':
     home = "https://gamefaqs.gamespot.com"
     report = open('GameFAQs4.csv', 'w+')
     errors = open("errors.log", 'w+')
-    genpage = home + "/games/rankings?min_votes=2&dlc=1" + '&page='
+    cutoff_wankers = 0
+    genpage = home + "/games/rankings?dlc=1&min_votes=" + str(cutoff_wankers)
     cutoff_rank = 3.7
     rank = 5
     page_num = 0
     report.write('Name,System,rating,rankers,date\n')
     while rank >= cutoff_rank:
-        extract_table(page_num, cutoff_wankers=0, genre_ignore=("sports",))
+        extract_table(page_num, genre_ignore=("sports",))
         page_num += 1
         rank = float(rank)
