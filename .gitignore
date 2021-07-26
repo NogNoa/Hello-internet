@@ -6,4 +6,3 @@ __pycache__/
 people.try
 geckodriver.log
 *.log
-geckodriver.log
