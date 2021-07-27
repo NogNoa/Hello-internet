@@ -8,6 +8,8 @@ def extract_date(html):
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
     if not content:
         print("no idea where right table is", html)
+        errors.write("extract_date: No right table found:" + html)
+        return "Unknown"
     content = content.ul
     lii = content.find_all("li")
     for li in lii:
@@ -17,7 +19,7 @@ def extract_date(html):
             break
 
     if "date" not in locals():
-        errors.write("Unknown Date:" + html)
+        errors.write("No Date Found:" + html)
         return "Unknown"
 
     date = HI.undiv(date)
@@ -60,6 +62,8 @@ def extract_genres(html):
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
     if not content:
         print("no idea where right table is", html)
+        errors.write("extract_genres:No right table found:" + html)
+        return ["Unknown"]
     content = content.ul
     lii = content.find_all("li")
     for li in lii:
@@ -69,8 +73,8 @@ def extract_genres(html):
             break
 
     if "genri" not in locals():
-        errors.write("Unknown Genres:" + html)
-        return "Unknown"
+        errors.write("No Genres Found:" + html)
+        return ["Unknown"]
 
     genri = genri.find_all("a", href=True)
     genri = [HI.undiv(genre) for genre in genri]
@@ -80,6 +84,7 @@ def extract_genres(html):
 def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
     global rank
     page = genpage + str(page_num)
+    HI.refresh()
     print('\npage:', page, rank)
     soup = HI.soupinit(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
@@ -111,7 +116,7 @@ if __name__ == '__main__':
     home = "https://gamefaqs.gamespot.com"
     report = open('GameFAQs4.csv', 'w+')
     errors = open("errors.log", 'w+')
-    genpage = home + "/games/rankings?min_votes=2&dlc=1" + '&page='
+    genpage = home + "/games/rankings?min_votes=2&dlc=1&page="
     cutoff_rank = 3.7
     rank = 5
     page_num = 0
@@ -120,3 +125,4 @@ if __name__ == '__main__':
         extract_table(page_num, cutoff_wankers=0, genre_ignore=("sports",))
         page_num += 1
         rank = float(rank)
+    HI.clean()

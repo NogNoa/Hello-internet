@@ -1,7 +1,10 @@
-from selenium import webdriver, common
+import selenium.common
+from selenium import webdriver
+from time import sleep
 from bs4 import BeautifulSoup
 
 driver = webdriver.Firefox()
+driver.minimize_window()
 
 
 def undiv(txt):
@@ -44,7 +47,14 @@ def gethtml(url):
     except:  # common.exceptions.InvalidSessionIdException:
         driver = webdriver.Firefox()
     """
-    driver.get(url)
+    try:
+        driver.get(url)
+    except selenium.common.exceptions.TimeoutException:
+        # timeout length itself is 5 minutes (30,000ms)
+        # so extra wait before a second try probably redundant
+        refresh()
+        sleep(3)
+        driver.get(url)
     return driver.page_source
 
 
@@ -56,4 +66,13 @@ def soupinit(url=None, html=None):
     return soup
 
 
+def clean():
+    driver.close()
 
+
+def refresh():
+    global driver
+    driver.close()
+    sleep(2)
+    driver = webdriver.Firefox()
+    driver.minimize_window()
