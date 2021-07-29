@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 
 driver = webdriver.Firefox()
 driver.minimize_window()
+errors = open("errors.log", 'a')
 
 
 def undiv(txt):
@@ -63,16 +64,23 @@ def soupinit(url=None, html=None):
         html = gethtml(url)
     """ready BeutifulSoup when loading a new page"""
     soup = BeautifulSoup(html, features="html.parser")
+    if soup.head.title == "502 Bad Gateway" or soup.body.pre in {"Gateway Timeout", "I/O error"}:
+        refresh()
+        if url is None:
+            errors.write("unrecoverable failpage\n" + html + "\n\n")
+        else:
+            soup = soupinit(url)
     return soup
 
 
 def clean():
     driver.close()
+    errors.close()
 
 
 def refresh():
     global driver
     driver.close()
-    sleep(2)
+    sleep(.5)
     driver = webdriver.Firefox()
     driver.minimize_window()

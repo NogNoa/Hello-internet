@@ -8,7 +8,7 @@ def extract_date(html):
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
     if not content:
         print("no idea where right table is", html)
-        errors.write("extract_date: No right table found:" + html)
+        errors.write("extract_date: No right table found:\n" + html + "\n\n")
         return "Unknown"
     content = content.ul
     lii = content.find_all("li")
@@ -62,7 +62,7 @@ def extract_genres(html):
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
     if not content:
         print("no idea where right table is", html)
-        errors.write("extract_genres:No right table found:" + html)
+        errors.write("extract_genres:No right table found:\n" + html + "\n\n")
         return ["Unknown"]
     content = content.ul
     lii = content.find_all("li")
@@ -73,7 +73,7 @@ def extract_genres(html):
             break
 
     if "genri" not in locals():
-        errors.write("No Genres Found:" + html)
+        errors.write("No Genres Found:\n" + html + "\n\n")
         return ["Unknown"]
 
     genri = genri.find_all("a", href=True)
