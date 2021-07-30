@@ -42,6 +42,7 @@ def exhref(txt):
 
 def re_gethtml(url):
     print(url)
+    errors.write(url + "\n\n")
     refresh()
     sleep(30)
     return gethtml(url)
@@ -49,12 +50,6 @@ def re_gethtml(url):
 
 def gethtml(url):
     global driver
-    """
-    try:
-        driver.implicitly_wait(0)
-    except:  # common.exceptions.InvalidSessionIdException:
-        driver = webdriver.Firefox()
-    """
     try:
         driver.get(url)
     except selenium.common.exceptions:

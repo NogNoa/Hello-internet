@@ -1,14 +1,14 @@
 import TableRead as HI
 
 
-def extract_date(html):
+def extract_date(html, name):
     soup = HI.soupinit(html=html)
     content = soup.body.find("div", attrs={"class": "body pod_gameinfo_left"})
     if not content:
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
     if not content:
         print("no idea where right table is", html)
-        errors.write("extract_date: No right table found:\n" + html + "\n\n")
+        errors.write("extract_date: No right table found:" + name + "\n" + html + "\n\n")
         return "Unknown"
     content = content.ul
     lii = content.find_all("li")
@@ -50,19 +50,19 @@ def extract_wankers(html, name):
         if char in '0123456789':
             wankers += char
     if wankers == '':
-        errors.write("No Wankers: " + name + "\n")
+        errors.write("No Wankers: " + name + "\n" + html + "\n\n")
         return '0'
     return wankers
 
 
-def extract_genres(html):
+def extract_genres(html, name):
     soup = HI.soupinit(html=html)
     content = soup.body.find("div", attrs={"class": "body pod_gameinfo_left"})
     if not content:
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
     if not content:
         print("no idea where right table is", html)
-        errors.write("extract_genres:No right table found:\n" + html + "\n\n")
+        errors.write("extract_genres:No right table found:" + name + "\n" + html + "\n\n")
         return ["Unknown"]
     content = content.ul
     lii = content.find_all("li")
@@ -73,7 +73,7 @@ def extract_genres(html):
             break
 
     if "genri" not in locals():
-        errors.write("No Genres Found:\n" + html + "\n\n")
+        errors.write("No Genres Found:" + name + "\n" + html + "\n\n")
         return ["Unknown"]
 
     genri = genri.find_all("a", href=True)
@@ -101,11 +101,11 @@ def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
         wankers = extract_wankers(game_html, name)
         if int(wankers) < cutoff_wankers:
             continue
-        genri = extract_genres(game_html)
+        genri = extract_genres(game_html, name)
         for genre in genre_ignore:
             if genre in genri:
                 continue
-        date = extract_date(game_html)
+        date = extract_date(game_html, name)
         line = ",".join([name, system, rank, wankers, date])
         line = line.replace('&amp;', '&')
         report.write(line + '\n')
