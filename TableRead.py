@@ -56,7 +56,7 @@ def gethtml(url, i=0):
     try:
         driver.get(url)
         html = driver.page_source
-    except selenium.common.exceptions:
+    except selenium.common.exceptions.TimeoutException or selenium.common.exceptions.WebDriverException:
         html = re_gethtml(url, i, driver.page_source)
     soup = BeautifulSoup(html, features="html.parser")
     if soup.head.title == "502 Bad Gateway" or soup.body.pre in {"Gateway Timeout", "I/O error"}:

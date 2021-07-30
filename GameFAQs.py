@@ -50,7 +50,7 @@ def extract_wankers(html, name):
         if char in '0123456789':
             wankers += char
     if wankers == '':
-        errors.write("No Wankers: " + name + "\n" + html + "\n\n")
+        errors.write("No Wankers: " + name + "\n")
         return '0'
     return wankers
 
