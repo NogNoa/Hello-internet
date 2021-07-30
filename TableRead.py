@@ -58,7 +58,15 @@ def gethtml(url):
             # so extra wait before a second try probably superfluous
             sleep(30)
         driver.get(url)
-    return driver.page_source
+    html = driver.page_source
+    soup = BeautifulSoup(html, features="html.parser")
+    if soup.head.title == "502 Bad Gateway" or soup.body.pre in {"Gateway Timeout", "I/O error"}:
+        print(url)
+        refresh()
+        sleep(30)
+        driver.get(url)
+        html = driver.page_source
+    return html
 
 
 def soupinit(url=None, html=None):
@@ -66,13 +74,6 @@ def soupinit(url=None, html=None):
         html = gethtml(url)
     """ready BeutifulSoup when loading a new page"""
     soup = BeautifulSoup(html, features="html.parser")
-    if soup.head.title == "502 Bad Gateway" or soup.body.pre in {"Gateway Timeout", "I/O error"}:
-        refresh()
-        if url is None:
-            errors.write("unrecoverable failpage\n" + html + "\n\n")
-        else:
-            sleep(30)
-            soup = soupinit(url)
     return soup
 
 
