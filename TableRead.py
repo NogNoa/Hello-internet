@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 driver = webdriver.Firefox()
 driver.minimize_window()
-errors = open("errors.log", 'a')
+errors = open("errors_HI.log", 'w+')
 
 
 def undiv(txt):
@@ -50,11 +50,13 @@ def gethtml(url):
     """
     try:
         driver.get(url)
-    except selenium.common.exceptions.TimeoutException:
-        # timeout length itself is 5 minutes (30,000ms)
-        # so extra wait before a second try probably redundant
+    except selenium.common.exceptions as e:
+        print(url)
         refresh()
-        sleep(3)
+        if e is not selenium.common.exceptions.TimeoutException:
+            # timeout length itself is 30 seconds (30,000ms)
+            # so extra wait before a second try probably superfluous
+            sleep(30)
         driver.get(url)
     return driver.page_source
 
@@ -69,6 +71,7 @@ def soupinit(url=None, html=None):
         if url is None:
             errors.write("unrecoverable failpage\n" + html + "\n\n")
         else:
+            sleep(30)
             soup = soupinit(url)
     return soup
 
