@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 driver = webdriver.Firefox()
 driver.minimize_window()
-errors = open("errors_HI.log", 'w+')
+errors = open("errors_HI.log", 'w+', encoding="utf-8")
 
 
 def undiv(txt):
@@ -40,24 +40,27 @@ def exhref(txt):
     return new
 
 
-def re_gethtml(url):
+def re_gethtml(url, i):
     print(url)
     errors.write(url + "\n\n")
     refresh()
     sleep(30)
-    return gethtml(url)
+    if i < 12:  # 6 minutes
+        return gethtml(url, i+1)
+    else:
+        return driver.page_source  # whatever the html is now.
 
 
-def gethtml(url):
+def gethtml(url, i=0):
     global driver
     try:
         driver.get(url)
     except selenium.common.exceptions:
-        return re_gethtml(url)
+        return re_gethtml(url, i)
     html = driver.page_source
     soup = BeautifulSoup(html, features="html.parser")
     if soup.head.title == "502 Bad Gateway" or soup.body.pre in {"Gateway Timeout", "I/O error"}:
-        return re_gethtml(url)
+        return re_gethtml(url, i)
     return html
 
 

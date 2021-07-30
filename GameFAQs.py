@@ -114,8 +114,8 @@ def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
 
 if __name__ == '__main__':
     home = "https://gamefaqs.gamespot.com"
-    report = open('GameFAQs4.csv', 'w+')
-    errors = open("errors.log", 'w+')
+    report = open('GameFAQs4.csv', 'w+', encoding="utf-8")
+    errors = open("errors.log", 'w+', encoding="utf-8")
     genpage = home + "/games/rankings?min_votes=2&dlc=1&page="
     cutoff_rank = 3.7
     rank = 5
