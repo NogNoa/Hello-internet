@@ -40,27 +40,34 @@ def exhref(txt):
     return new
 
 
-def re_gethtml(url, i, html):
+def rec_re_gethtml(url, i=0, html=driver.page_source):
     print(url)
     errors.write(url + "\n\n")
     refresh()
     sleep(30)
     if i < 12:  # 6 minutes
-        return gethtml(url, i+1)
+        return gethtml(url, i + 1)
     else:
         return html
 
 
-def gethtml(url, i=0):
-    global driver
+def re_gethtml(url):
+    print(url)
+    errors.write(url + "\n\n")
+    refresh()
+    sleep(30)
+    return
+
+
+def gethtml(url):
     try:
         driver.get(url)
         html = driver.page_source
     except selenium.common.exceptions.TimeoutException or selenium.common.exceptions.WebDriverException:
         html = re_gethtml(url, i, driver.page_source)
     soup = BeautifulSoup(html, features="html.parser")
-    if soup.head.title == "502 Bad Gateway" or soup.body.pre in {"Gateway Timeout", "I/O error"}:
-        html = re_gethtml(url, i, html)
+    if soup.head.title == "502 Bad Gateway" or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
+        html = re_gethtml(url)
     return html
 
 

@@ -1,0 +1,16 @@
+
+Blocked IP Address
+
+Your IP address has been temporarily blocked due to a large number of HTTP requests. The most common causes of this issue are:
+
+    If you are using Maxthon or Brave as a browser, or have installed the Ghostery add-on, you should know that these programs send extra traffic to our servers for every page on the site that you browse. Using GameFAQs regularly with these browsers can cause temporary and even permanent IP blocks due to these additional requests.
+    Some unofficial phone apps appear to be using GameFAQs as a back-end, but they do not behave like a real web browser does. This triggers our anti-spambot measures, which are designed to stop automated systems from flooding the site with traffic. Continued use of these apps may cause your IP to be blocked indefinitely. There is no official GameFAQs app, and we do not support nor have any contact with the makers of these unofficial apps.
+    Using a script or add-on that scans GameFAQs for box and screen images (such as an emulator front-end), while overloading our search engine
+    Running a "scraper" or "downloader" program that either does not identify itself or uses fake headers to elude detection
+    Using a badly configured (or badly written) browser add-on for blocking content
+    Overusing our search engine with a very large number of searches in a very short amount of time
+
+If you promise to stop (by clicking the Agree button below), we'll unblock your connection for now, but we will immediately re-block it if we detect additional bad behavior.
+
+If you do not understand what is causing this behavior, please contact us here.
+If you wish to be unblocked, you must agree that you will take immediate steps to rectify this issue. Please fill out the CAPTCHA below and then click the button to indicate that you agree to these terms. Continued abuse of our services will cause your IP address to be blocked indefinitely. 

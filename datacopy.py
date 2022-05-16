@@ -11,13 +11,13 @@ from bs4 import BeautifulSoup
 table = open('table.txt', 'w+')
 
 
-class datacopy():
+class datacopy:
     def __init__(self):
         self.driver = webdriver.Firefox()
         self.driver.get("https://gamefaqs.gamespot.com/games/rankings?platform=99&genre=0&list_type=rate&min_votes=2")
 
     def copy(self, xpath):
-        element = self.driver.find_element_by_xpath(xpath)
+        element = self.driver.find_element(by=By.XPATH, value=xpath)
         table.write(element.get_attribute('innerHTML'))
 
     def extract(self):
