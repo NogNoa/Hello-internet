@@ -3,7 +3,7 @@ from selenium import webdriver
 from time import sleep
 from bs4 import BeautifulSoup
 
-driver = webdriver.Firefox()
+driver = webdriver.Chrome()
 driver.minimize_window()
 errors = open("errors_HI.log", 'w+', encoding="utf-8")
 
@@ -40,23 +40,16 @@ def exhref(txt):
     return new
 
 
-def rec_re_gethtml(url, i=0, html=driver.page_source):
+def re_gethtml(url, html):
     print(url)
     errors.write(url + "\n\n")
     refresh()
     sleep(30)
-    if i < 12:  # 6 minutes
-        return gethtml(url, i + 1)
-    else:
+    try:
+        driver.get(url)
+        return driver.page_source
+    except selenium.common.exceptions.TimeoutException or selenium.common.exceptions.WebDriverException:
         return html
-
-
-def re_gethtml(url):
-    print(url)
-    errors.write(url + "\n\n")
-    refresh()
-    sleep(30)
-    return
 
 
 def gethtml(url):
@@ -64,10 +57,10 @@ def gethtml(url):
         driver.get(url)
         html = driver.page_source
     except selenium.common.exceptions.TimeoutException or selenium.common.exceptions.WebDriverException:
-        html = re_gethtml(url, i, driver.page_source)
+        html = re_gethtml(url, driver.page_source)
     soup = BeautifulSoup(html, features="html.parser")
     if soup.head.title == "502 Bad Gateway" or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
-        html = re_gethtml(url)
+        html = re_gethtml(url, html)
     return html
 
 
