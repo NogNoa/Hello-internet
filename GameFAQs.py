@@ -84,7 +84,6 @@ def extract_genres(html, name):
 def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
     global rank
     page = genpage + str(page_num)
-    HI.refresh()
     print('\npage:', page, rank)
     soup = HI.soupinit(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody

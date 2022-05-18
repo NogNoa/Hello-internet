@@ -1,15 +1,13 @@
-import selenium.common
-from selenium import webdriver
 from time import sleep
+
+import requests
 from bs4 import BeautifulSoup
 
-driver = webdriver.Chrome()
-driver.minimize_window()
 errors = open("errors_HI.log", 'w+', encoding="utf-8")
 
 
 def undiv(txt):
-    """removes the formating from an html line and leaves the internal string"""
+    """Removes the formating from an HTML line and leaves the internal string"""
     txt = str(txt)
     new = ''
     div = True
@@ -24,7 +22,7 @@ def undiv(txt):
 
 
 def exhref(txt):
-    """takes the url part of a hyperlink"""
+    """Takes the url part of a hyperlink"""
     txt = str(txt)
     new = ''
     href = False
@@ -43,23 +41,24 @@ def exhref(txt):
 def re_gethtml(url, html):
     print(url)
     errors.write(url + "\n\n")
-    refresh()
     sleep(30)
-    try:
-        driver.get(url)
-        return driver.page_source
-    except selenium.common.exceptions.TimeoutException or selenium.common.exceptions.WebDriverException:
-        return html
+    # try:
+    rsp = requests.get(url, verify=True)
+    return rsp.content.decode("utf-8")
+
+
+"""except selenium.common.exceptions.TimeoutException or selenium.common.exceptions.WebDriverException:
+        return html"""
 
 
 def gethtml(url):
-    try:
-        driver.get(url)
-        html = driver.page_source
-    except selenium.common.exceptions.TimeoutException or selenium.common.exceptions.WebDriverException:
-        html = re_gethtml(url, driver.page_source)
+    rsp = requests.get(url, verify=True)
+    html = rsp.content.decode("utf-8")
+    """except selenium.common.exceptions.TimeoutException or selenium.common.exceptions.WebDriverException:
+        html = re_gethtml(url, driver.page_source)"""
     soup = BeautifulSoup(html, features="html.parser")
-    if soup.head.title == "502 Bad Gateway" or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
+    if not soup.head or soup.head.title == "502 Bad Gateway" or \
+        not soup.body or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
         html = re_gethtml(url, html)
     return html
 
@@ -73,13 +72,4 @@ def soupinit(url=None, html=None):
 
 
 def clean():
-    driver.close()
     errors.close()
-
-
-def refresh():
-    global driver
-    driver.close()
-    sleep(.5)
-    driver = webdriver.Firefox()
-    driver.minimize_window()
