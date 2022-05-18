@@ -3,7 +3,7 @@ from selenium import webdriver
 from time import sleep
 from bs4 import BeautifulSoup
 
-driver = webdriver.Chrome()
+driver = webdriver.Firefox(executable_path='D:/Apps/64/Webdriver')
 driver.minimize_window()
 errors = open("errors_HI.log", 'w+', encoding="utf-8")
 
