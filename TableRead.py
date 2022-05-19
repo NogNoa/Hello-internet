@@ -52,8 +52,9 @@ def re_gethtml(url, html):
 
 
 def gethtml(url):
-    rsp = requests.get(url, verify=True)
-    html = rsp.content.decode("utf-8")
+    session = requests.Session()
+    rsp = session.get(url, verify=True, allow_redirects=True)
+    html = rsp.text
     """except selenium.common.exceptions.TimeoutException or selenium.common.exceptions.WebDriverException:
         html = re_gethtml(url, driver.page_source)"""
     soup = BeautifulSoup(html, features="html.parser")
