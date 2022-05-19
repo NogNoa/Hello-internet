@@ -1,3 +1,4 @@
+import os
 from time import sleep
 
 import requests
@@ -52,11 +53,11 @@ def re_gethtml(url, html):
 
 
 def gethtml(url):
-    session = requests.Session()
-    rsp = session.get(url, verify=True, allow_redirects=True)
-    html = rsp.text
+    run = os.system(f"wsl curl --output gamefaqs.html {url}")
     """except selenium.common.exceptions.TimeoutException or selenium.common.exceptions.WebDriverException:
         html = re_gethtml(url, driver.page_source)"""
+    with open("gamefaqs.html", "r") as scroll:
+        html = scroll.read()
     soup = BeautifulSoup(html, features="html.parser")
     if not soup.head or soup.head.title == "502 Bad Gateway" or \
         not soup.body or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
