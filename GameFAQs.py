@@ -8,7 +8,8 @@ def extract_date(html, name):
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
     if not content:
         print("no idea where right table is", html)
-        errors.write("extract_date: No right table found:" + name + "\n" + html + "\n\n")
+        with open("errors.log", 'a+', encoding="utf-8") as errors:
+            errors.write("extract_date: No right table found:" + name + "\n" + html + "\n\n")
         return "Unknown"
     content = content.ul
     lii = content.find_all("li")
@@ -19,7 +20,8 @@ def extract_date(html, name):
             break
 
     if "date" not in locals():
-        errors.write("No Date Found:" + html)
+        with open("errors.log", 'a+', encoding="utf-8") as errors:
+            errors.write("No Date Found:" + html)
         return "Unknown"
 
     date = HI.undiv(date)
@@ -50,7 +52,8 @@ def extract_wankers(html, name):
         if char in '0123456789':
             wankers += char
     if wankers == '':
-        errors.write("No Wankers: " + name + "\n")
+        with open("errors.log", 'a+', encoding="utf-8") as errors:
+            errors.write("No Wankers: " + name + "\n")
         return '0'
     return wankers
 
@@ -62,7 +65,8 @@ def extract_genres(html, name):
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
     if not content:
         print("no idea where right table is", html)
-        errors.write("extract_genres:No right table found:" + name + "\n" + html + "\n\n")
+        with open("errors.log", 'a+', encoding="utf-8") as errors:
+            errors.write("extract_genres:No right table found:" + name + "\n" + html + "\n\n")
         return ["Unknown"]
     content = content.ul
     lii = content.find_all("li")
@@ -73,7 +77,8 @@ def extract_genres(html, name):
             break
 
     if "genri" not in locals():
-        errors.write("No Genres Found:" + name + "\n" + html + "\n\n")
+        with open("errors.log", 'a+', encoding="utf-8") as errors:
+            errors.write("No Genres Found:" + name + "\n" + html + "\n\n")
         return ["Unknown"]
 
     genri = genri.find_all("a", href=True)
@@ -89,10 +94,10 @@ def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
     for tr in table.find_all('tr'):
         td = tr.find_all("td")
-        system, game, rank = td[1:4]
+        game = td[1].a
         name = HI.undiv(game)
-        system = HI.undiv(system)
-        rank = HI.undiv(rank)  # effective end point for side-effect
+        system = HI.undiv(td[1].span)
+        rank = HI.undiv(td[2])  # effective end point for side effect
         game = home + HI.exhref(game)  # now a URL to game's own page
         name = name.replace(',', '.').replace('ū', 'u').replace('é', 'e').replace('ä', 'a')
         # '\u016b'='ū' '\u00e9'='é' '\xe4'='ä. é appears particularly in all them pokémon games.
@@ -107,21 +112,23 @@ def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
         date = extract_date(game_html, name)
         line = ",".join([name, system, rank, wankers, date])
         line = line.replace('&amp;', '&')
-        report.write(line + '\n')
+        with open('GameFAQs4.csv', 'a+', encoding="utf-8") as report:
+            report.write(line + '\n')
         print(line)
 
 
 if __name__ == '__main__':
     home = "https://gamefaqs.gamespot.com"
-    report = open('GameFAQs4.csv', 'w+', encoding="utf-8")
-    errors = open("errors.log", 'w+', encoding="utf-8")
     genpage = home + "/games/rankings?min_votes=2&dlc=1&page="
     cutoff_rank = 3.7
     rank = 5
     page_num = 0
-    report.write('Name,System,rating,rankers,date\n')
+    with open('GameFAQs4.csv', 'w+', encoding="utf-8") as report:
+        report.write('Name,System,rating,rankers,date\n')
     while rank >= cutoff_rank:
-        extract_table(page_num, cutoff_wankers=0, genre_ignore=("sports",))
+        extract_table(page_num, cutoff_wankers=25, genre_ignore=("sports",))
         page_num += 1
         rank = float(rank)
     HI.clean()
+
+# todo: savestate
