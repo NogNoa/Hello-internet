@@ -29,9 +29,13 @@ for url in urli:
     moduli = body.find_all(["code", "tt"])
     with open(codex_nom, 'a') as file:
         for module in moduli:
+            try:
+                cls = f" - {module['class'][0]}"
+            except KeyError:
+                cls = ''
             module = module.text
             if module not in seen_modules:
-                file.write(f"\t{module}\n")
-                print(module)
+                file.write(f"\t{module}{cls}\n")
+                print(module+cls)
                 seen_modules.add(module)
         file.write("\n")
