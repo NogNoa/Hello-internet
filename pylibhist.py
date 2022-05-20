@@ -30,12 +30,13 @@ for url in urli:
     with open(codex_nom, 'a') as file:
         for module in moduli:
             try:
-                cls = f" - {module['class'][0]}"
+                if module['class'][0] != "module":
+                    continue
             except KeyError:
-                cls = ''
+                pass
             module = module.text
             if module not in seen_modules:
-                file.write(f"\t{module}{cls}\n")
-                print(module+cls)
+                file.write(f"\t{module}\n")
+                print(module)
                 seen_modules.add(module)
         file.write("\n")
