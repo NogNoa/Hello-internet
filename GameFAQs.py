@@ -92,7 +92,8 @@ def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
     print('\npage:', page, rank)
     soup = HI.soupinit(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
-    for tr in table.find_all('tr'):
+    tri = table.find_all('tr')
+    for tr in tri:
         td = tr.find_all("td")
         game = td[1].a
         name = HI.undiv(game)
@@ -115,14 +116,21 @@ def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
         with open('GameFAQs4.csv', 'a+', encoding="utf-8") as report:
             report.write(line + '\n')
         print(line)
+        save.write((page_num, tri.index(tr)))
 
 
 if __name__ == '__main__':
+    import begin_resume
+
     home = "https://gamefaqs.gamespot.com"
     genpage = home + "/games/rankings?min_votes=2&dlc=1&page="
+    save = begin_resume.Save("gamefaq.sav")
     cutoff_rank = 3.7
     rank = 5
-    page_num = 0
+    try:
+        page_num = save.read()[0]
+    except begin_resume.SaveNotFoundError:
+        page_num = 0
     with open('GameFAQs4.csv', 'w+', encoding="utf-8") as report:
         report.write('Name,System,rating,rankers,date\n')
     while rank >= cutoff_rank:
