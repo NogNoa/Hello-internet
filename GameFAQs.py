@@ -11,11 +11,11 @@ def extract_date(html, name):
         with open("errors.log", 'a+', encoding="utf-8") as errors:
             errors.write("extract_date: No right table found:" + name + "\n" + html + "\n\n")
         return "Unknown"
-    content = content.ul
+    content = content.ol if content.ol else content.ul
     lii = content.find_all("li")
     for li in lii:
         b = HI.undiv(li.find('b'))
-        if b[:3] == "Rel":  # "Release:"
+        if b.startswith("Release"):
             date = li.find("a", href=True)
             break
 
@@ -68,11 +68,11 @@ def extract_genres(html, name):
         with open("errors.log", 'a+', encoding="utf-8") as errors:
             errors.write("extract_genres:No right table found:" + name + "\n" + html + "\n\n")
         return ["Unknown"]
-    content = content.ul
+    content = content.ol if content.ol else content.ul
     lii = content.find_all("li")
     for li in lii:
         b = HI.undiv(li.find('b'))
-        if b[:3] == "Gen":  # "Genre:"
+        if b.startswith("Genre"):
             genri = li
             break
 
@@ -82,18 +82,19 @@ def extract_genres(html, name):
         return ["Unknown"]
 
     genri = genri.find_all("a", href=True)
-    genri = [HI.undiv(genre) for genre in genri]
+    genri = [HI.undiv(genre).lower() for genre in genri]
     return genri
 
 
-def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
+def extract_table(page_num, row_num, book_nom, cutoff_wankers=0, genre_ignore=()):
     global rank
     page = genpage + str(page_num)
     print('\npage:', page, rank)
     soup = HI.soupinit(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
     tri = table.find_all('tr')
-    for tr in tri:
+    for tr in tri[row_num:]:
+        save.write((page_num, tri.index(tr)))
         td = tr.find_all("td")
         game = td[1].a
         name = HI.undiv(game)
@@ -107,16 +108,15 @@ def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
         if int(wankers) < cutoff_wankers:
             continue
         genri = extract_genres(game_html, name)
-        for genre in genre_ignore:
-            if genre in genri:
-                continue
+        if set(genre_ignore).intersection(genri):
+            continue
         date = extract_date(game_html, name)
         line = ",".join([name, system, rank, wankers, date])
         line = line.replace('&amp;', '&')
-        with open('GameFAQs4.csv', 'a+', encoding="utf-8") as report:
+        with open(book_nom, 'a', encoding="utf-8") as report:
             report.write(line + '\n')
         print(line)
-        save.write((page_num, tri.index(tr)))
+
 
 
 if __name__ == '__main__':
@@ -127,16 +127,18 @@ if __name__ == '__main__':
     save = begin_resume.Save("gamefaq.sav")
     cutoff_rank = 3.7
     rank = 5
+    book_nom ="GameFAQs4.csv"
     try:
-        page_num = save.read()[0]
+        page_num, row_num = save.read()
     except begin_resume.SaveNotFoundError:
-        page_num = 0
-    with open('GameFAQs4.csv', 'w+', encoding="utf-8") as report:
-        report.write('Name,System,rating,rankers,date\n')
+        page_num = row_num = 0
+        with open(book_nom, 'w+', encoding="utf-8") as report:
+            report.write('Name,System,rating,rankers,date\n')
     while rank >= cutoff_rank:
-        extract_table(page_num, cutoff_wankers=25, genre_ignore=("sports",))
+        extract_table(page_num, row_num, book_nom, cutoff_wankers=25, genre_ignore=("sports",))
         page_num += 1
+        row_num = 0
+        save.write((page_num, row_num))
         rank = float(rank)
     HI.clean()
 
-# todo: savestate

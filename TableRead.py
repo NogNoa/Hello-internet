@@ -54,7 +54,7 @@ def re_gethtml(url, html):
 
 def gethtml(url):
     sleep(random.random() * 5)
-    scroll = os.popen(f"wsl curl {url}")
+    scroll = os.popen(f"wsl curl \"{url}\"")
     html = scroll.read()
     soup = BeautifulSoup(html, features="html.parser")
     if not soup.head or soup.head.title == "502 Bad Gateway" or \

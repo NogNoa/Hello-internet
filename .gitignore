@@ -6,3 +6,4 @@ __pycache__/
 people.try
 *.log
 *.html
+*.sav
