@@ -53,7 +53,7 @@ def re_gethtml(url, html):
 
 
 def gethtml(url):
-    sleep(random.random() * 5)
+    sleep(random.random() * 15)
     scroll = os.popen(f"wsl curl \"{url}\"")
     html = scroll.read()
     soup = BeautifulSoup(html, features="html.parser")
