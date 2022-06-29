@@ -93,8 +93,10 @@ def extract_table(page_num, row_num, book_nom, cutoff_wankers=0, genre_ignore=()
     soup = HI.soupinit(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
     tri = table.find_all('tr')
-    for i, tr in enumerate(tri[row_num:]):
-        save.write((page_num, row_num+i))
+    while row_num < len(tri):
+        save.write((page_num, row_num))
+        tr = tri[row_num]
+        row_num += 1
         td = tr.find_all("td")
         game = td[1].a
         name = HI.undiv(game)
