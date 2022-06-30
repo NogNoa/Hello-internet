@@ -88,7 +88,7 @@ def extract_genres(html, name):
 
 
 # noinspection PyShadowingNames
-def extract_table(page_num, row_num, cutoff_wankers=0, genre_ignore=()):
+def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
     global rank
     page = genpage + str(page_num)
     print('\npage:', page, rank)
@@ -96,8 +96,7 @@ def extract_table(page_num, row_num, cutoff_wankers=0, genre_ignore=()):
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
     tri = table.find_all('tr')
     poem: list[str] = []
-    while row_num < len(tri):
-        tr = tri[row_num]
+    for row_num, tr in enumerate(tri):
         td = tr.find_all("td")
         game = td[1].a
         name = HI.undiv(game)
@@ -119,7 +118,6 @@ def extract_table(page_num, row_num, cutoff_wankers=0, genre_ignore=()):
         stanza = ",".join([name, system, rank, wankers, date])
         stanza = stanza.replace('&amp;', '&')
         poem[row_num] = stanza
-        row_num += 1
         print(stanza)
     return poem
 
@@ -134,17 +132,16 @@ if __name__ == '__main__':
     rank = 5
     book_nom = "GameFAQs4.csv"
     try:
-        page_num, row_num = save.read()
+        page_num = save.read()
     except begin_resume.SaveNotFoundError:
-        page_num = row_num = 0
+        page_num = 0
         with open(book_nom, 'w+', encoding="utf-8") as report:
             report.write('Name,System,rating,rankers,date\n')
     while rank >= cutoff_rank:
-        poem = extract_table(page_num, row_num, cutoff_wankers=25, genre_ignore=("sports",))
+        poem = extract_table(page_num, cutoff_wankers=25, genre_ignore=("sports",))
         with open(book_nom, 'a', encoding="utf-8") as report:
             report.write("\n".join(poem))
         page_num += 1
-        row_num = 0
-        save.write((page_num, row_num))
+        save.write(page_num)
         rank = float(rank)
     HI.clean()
