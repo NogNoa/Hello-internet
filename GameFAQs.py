@@ -4,15 +4,14 @@ import asyncio
 import TableRead as HI
 
 
-async def extract_date(html, name):
-    soup = await HI.soupinit(html=html)
+def extract_date(soup, name):
     content = soup.body.find("div", attrs={"class": "body pod_gameinfo_left"})
     if not content:
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
     if not content:
-        print("no idea where right table is", html)
+        print("no idea where right table is", soup)
         with open("errors.log", 'a+', encoding="utf-8") as errors:
-            errors.write("extract_date: No right table found:" + name + "\n" + html + "\n\n")
+            errors.write("extract_date: No right table found:" + name + "\n" + soup + "\n\n")
         return "Unknown"
     content = content.ol if content.ol else content.ul
     lii = content.find_all("li")
@@ -24,7 +23,7 @@ async def extract_date(html, name):
 
     if "date" not in locals():
         with open("errors.log", 'a+', encoding="utf-8") as errors:
-            errors.write("No Date Found:" + html)
+            errors.write("No Date Found:" + soup)
         return "Unknown"
 
     # noinspection PyUnboundLocalVariable
@@ -46,9 +45,8 @@ async def extract_date(html, name):
     return date
 
 
-async def extract_wankers(html, name):
+def extract_wankers(soup, name):
     # wankers in actually rankers, it's a joke gimeabreak
-    soup = await HI.soupinit(html=html)
     rate_text = soup.find("div", attrs={"id": "gs_rate_avg_hint", "class": "gamespace_rate_hint"})
     rate_text = HI.undiv(rate_text)
     wankers = ''
@@ -62,15 +60,14 @@ async def extract_wankers(html, name):
     return wankers
 
 
-async def extract_genres(html, name):
-    soup = await HI.soupinit(html=html)
+def extract_genres(soup, name):
     content = soup.body.find("div", attrs={"class": "body pod_gameinfo_left"})
     if not content:
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
     if not content:
-        print("no idea where right table is", html)
+        print("no idea where right table is", soup)
         with open("errors.log", 'a+', encoding="utf-8") as errors:
-            errors.write("extract_genres:No right table found:" + name + "\n" + html + "\n\n")
+            errors.write("extract_genres:No right table found:" + name + "\n" + soup + "\n\n")
         return ["Unknown"]
     content = content.ol if content.ol else content.ul
     lii = content.find_all("li")
@@ -82,7 +79,7 @@ async def extract_genres(html, name):
 
     if "genri" not in locals():
         with open("errors.log", 'a+', encoding="utf-8") as errors:
-            errors.write("No Genres Found:" + name + "\n" + html + "\n\n")
+            errors.write("No Genres Found:" + name + "\n" + soup + "\n\n")
         return ["Unknown"]
 
     # noinspection PyUnboundLocalVariable
@@ -94,7 +91,6 @@ async def extract_genres(html, name):
 # noinspection PyShadowingNames
 async def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
     page = genpage + str(page_num)
-    print('\npage:', page, rank)
     soup = await HI.soupinit(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
     tri = table.find_all('tr')
@@ -112,16 +108,16 @@ async def extract_row(tr, cutoff_wankers, genre_ignore):
     game = home + HI.exhref(game)  # now a URL to game's own page
     name = name.replace(',', '.').replace('ū', 'u').replace('é', 'e').replace('ä', 'a')
     # '\u016b'='ū' '\u00e9'='é' '\xe4'='ä. é appears particularly in all them pokémon games.
-    game_html = await HI.gethtml(game)
-    wankers = await extract_wankers(game_html, name)
+    game_soup = await HI.soupinit(game)
+    wankers = extract_wankers(game_soup, name)
     if int(wankers) < cutoff_wankers:
         print(f"{name} - rankers: {wankers}")
         return ''
-    genri = await extract_genres(game_html, name)
+    genri = extract_genres(game_soup, name)
     if set(genre_ignore).intersection(genri):
         print(f"{name} - genres: {genri}")
         return ''
-    date = await extract_date(game_html, name)
+    date = extract_date(game_soup, name)
     stanza = ",".join([name, system, rank, wankers, date])
     stanza = stanza.replace('&amp;', '&')
     print(stanza)
@@ -139,13 +135,14 @@ if __name__ == '__main__':
     rank = 5
     book_nom = "GameFAQs4.csv"
     try:
-        page_num = save.read()[0]
+        page_num = save.read()
     except begin_resume.SaveNotFoundError:
         page_num = 0
         with open(book_nom, 'w+', encoding="utf-8") as report:
             report.write('Name,System,rating,rankers,date\n')
     while rank >= cutoff_rank:
-        poem = asyncio.run(extract_table(page_num, cutoff_wankers=25, genre_ignore=("sports",)))
+        poem = asyncio.run(extract_table(page_num, cutoff_wankers=20, genre_ignore=("sports",)))
+        poem = list(filter((lambda x: x != ''), poem))
         with open(book_nom, 'a', encoding="utf-8") as report:
             report.write("\n".join(poem))
         page_num += 1
