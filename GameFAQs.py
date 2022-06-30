@@ -108,9 +108,11 @@ def extract_table(page_num, row_num, book_nom, cutoff_wankers=0, genre_ignore=()
         game_html = HI.gethtml(game)
         wankers = extract_wankers(game_html, name)
         if int(wankers) < cutoff_wankers:
+            print(f"{name} - rankers: {wankers}")
             continue
         genri = extract_genres(game_html, name)
         if set(genre_ignore).intersection(genri):
+            print(f"{name} - genres: {genri}")
             continue
         date = extract_date(game_html, name)
         line = ",".join([name, system, rank, wankers, date])
@@ -118,7 +120,6 @@ def extract_table(page_num, row_num, book_nom, cutoff_wankers=0, genre_ignore=()
         with open(book_nom, 'a', encoding="utf-8") as report:
             report.write(line + '\n')
         print(line)
-
 
 
 if __name__ == '__main__':
@@ -129,7 +130,7 @@ if __name__ == '__main__':
     save = begin_resume.Save("gamefaq.sav")
     cutoff_rank = 3.7
     rank = 5
-    book_nom ="GameFAQs4.csv"
+    book_nom = "GameFAQs4.csv"
     try:
         page_num, row_num = save.read()
     except begin_resume.SaveNotFoundError:
@@ -143,4 +144,3 @@ if __name__ == '__main__':
         save.write((page_num, row_num))
         rank = float(rank)
     HI.clean()
-
