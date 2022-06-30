@@ -1,3 +1,6 @@
+import asyncio
+
+# noinspection PyPep8Naming
 import TableRead as HI
 
 
@@ -24,6 +27,7 @@ def extract_date(html, name):
             errors.write("No Date Found:" + html)
         return "Unknown"
 
+    # noinspection PyUnboundLocalVariable
     date = HI.undiv(date)
     date = date.split(' ')
     date = [i for i in date if i != '']
@@ -88,20 +92,17 @@ def extract_genres(html, name):
 
 
 # noinspection PyShadowingNames
-def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
+async def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
     page = genpage + str(page_num)
     print('\npage:', page, rank)
     soup = HI.soupinit(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
     tri = table.find_all('tr')
-    poem: list[str] = []
-    for row_num, tr in enumerate(tri):
-        stanza = extract_row(tr, cutoff_wankers, genre_ignore)
-        poem[row_num] = stanza
+    poem = await asyncio.gather(extract_row(tr, cutoff_wankers, genre_ignore) for row_num, tr in enumerate(tri))
     return poem
 
 
-def extract_row(tr, cutoff_wankers, genre_ignore):
+async def extract_row(tr, cutoff_wankers, genre_ignore):
     global rank
     td = tr.find_all("td")
     game = td[1].a
@@ -127,8 +128,13 @@ def extract_row(tr, cutoff_wankers, genre_ignore):
     return stanza
 
 
-if __name__ == '__main__':
+def process_page(page_num):
+    poem = asyncio.run(extract_table(page_num, cutoff_wankers=25, genre_ignore=("sports",)))
+    with open(book_nom, 'a', encoding="utf-8") as report:
+        report.write("\n".join(poem))
 
+
+if __name__ == '__main__':
     import begin_resume
 
     home = "https://gamefaqs.gamespot.com"
@@ -144,9 +150,7 @@ if __name__ == '__main__':
         with open(book_nom, 'w+', encoding="utf-8") as report:
             report.write('Name,System,rating,rankers,date\n')
     while rank >= cutoff_rank:
-        poem = extract_table(page_num, cutoff_wankers=25, genre_ignore=("sports",))
-        with open(book_nom, 'a', encoding="utf-8") as report:
-            report.write("\n".join(poem))
+        process_page(page_num)
         page_num += 1
         save.write(page_num)
     HI.clean()
