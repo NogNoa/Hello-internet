@@ -81,22 +81,23 @@ def extract_genres(html, name):
             errors.write("No Genres Found:" + name + "\n" + html + "\n\n")
         return ["Unknown"]
 
+    # noinspection PyUnboundLocalVariable
     genri = genri.find_all("a", href=True)
     genri = [HI.undiv(genre).lower() for genre in genri]
     return genri
 
 
-def extract_table(page_num, row_num, book_nom, cutoff_wankers=0, genre_ignore=()):
+# noinspection PyShadowingNames
+def extract_table(page_num, row_num, cutoff_wankers=0, genre_ignore=()):
     global rank
     page = genpage + str(page_num)
     print('\npage:', page, rank)
     soup = HI.soupinit(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
     tri = table.find_all('tr')
+    poem: list[str] = []
     while row_num < len(tri):
-        save.write((page_num, row_num))
         tr = tri[row_num]
-        row_num += 1
         td = tr.find_all("td")
         game = td[1].a
         name = HI.undiv(game)
@@ -115,11 +116,12 @@ def extract_table(page_num, row_num, book_nom, cutoff_wankers=0, genre_ignore=()
             print(f"{name} - genres: {genri}")
             continue
         date = extract_date(game_html, name)
-        line = ",".join([name, system, rank, wankers, date])
-        line = line.replace('&amp;', '&')
-        with open(book_nom, 'a', encoding="utf-8") as report:
-            report.write(line + '\n')
-        print(line)
+        stanza = ",".join([name, system, rank, wankers, date])
+        stanza = stanza.replace('&amp;', '&')
+        poem[row_num] = stanza
+        row_num += 1
+        print(stanza)
+    return poem
 
 
 if __name__ == '__main__':
@@ -138,7 +140,9 @@ if __name__ == '__main__':
         with open(book_nom, 'w+', encoding="utf-8") as report:
             report.write('Name,System,rating,rankers,date\n')
     while rank >= cutoff_rank:
-        extract_table(page_num, row_num, book_nom, cutoff_wankers=25, genre_ignore=("sports",))
+        poem = extract_table(page_num, row_num, cutoff_wankers=25, genre_ignore=("sports",))
+        with open(book_nom, 'a', encoding="utf-8") as report:
+            report.write("\n".join(poem))
         page_num += 1
         row_num = 0
         save.write((page_num, row_num))
