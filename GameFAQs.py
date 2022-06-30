@@ -89,7 +89,6 @@ def extract_genres(html, name):
 
 # noinspection PyShadowingNames
 def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
-    global rank
     page = genpage + str(page_num)
     print('\npage:', page, rank)
     soup = HI.soupinit(url=page)
@@ -97,32 +96,39 @@ def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
     tri = table.find_all('tr')
     poem: list[str] = []
     for row_num, tr in enumerate(tri):
-        td = tr.find_all("td")
-        game = td[1].a
-        name = HI.undiv(game)
-        system = HI.undiv(td[1].span)
-        rank = HI.undiv(td[2])  # effective end point for side effect
-        game = home + HI.exhref(game)  # now a URL to game's own page
-        name = name.replace(',', '.').replace('ū', 'u').replace('é', 'e').replace('ä', 'a')
-        # '\u016b'='ū' '\u00e9'='é' '\xe4'='ä. é appears particularly in all them pokémon games.
-        game_html = HI.gethtml(game)
-        wankers = extract_wankers(game_html, name)
-        if int(wankers) < cutoff_wankers:
-            print(f"{name} - rankers: {wankers}")
-            continue
-        genri = extract_genres(game_html, name)
-        if set(genre_ignore).intersection(genri):
-            print(f"{name} - genres: {genri}")
-            continue
-        date = extract_date(game_html, name)
-        stanza = ",".join([name, system, rank, wankers, date])
-        stanza = stanza.replace('&amp;', '&')
+        stanza = extract_row(tr, cutoff_wankers, genre_ignore)
         poem[row_num] = stanza
-        print(stanza)
     return poem
 
 
+def extract_row(tr, cutoff_wankers, genre_ignore):
+    global rank
+    td = tr.find_all("td")
+    game = td[1].a
+    name = HI.undiv(game)
+    system = HI.undiv(td[1].span)
+    rank = float(HI.undiv(td[2]))  # effective end point for side effect
+    game = home + HI.exhref(game)  # now a URL to game's own page
+    name = name.replace(',', '.').replace('ū', 'u').replace('é', 'e').replace('ä', 'a')
+    # '\u016b'='ū' '\u00e9'='é' '\xe4'='ä. é appears particularly in all them pokémon games.
+    game_html = HI.gethtml(game)
+    wankers = extract_wankers(game_html, name)
+    if int(wankers) < cutoff_wankers:
+        print(f"{name} - rankers: {wankers}")
+        return ''
+    genri = extract_genres(game_html, name)
+    if set(genre_ignore).intersection(genri):
+        print(f"{name} - genres: {genri}")
+        return ''
+    date = extract_date(game_html, name)
+    stanza = ",".join([name, system, rank, wankers, date])
+    stanza = stanza.replace('&amp;', '&')
+    print(stanza)
+    return stanza
+
+
 if __name__ == '__main__':
+
     import begin_resume
 
     home = "https://gamefaqs.gamespot.com"
@@ -132,7 +138,7 @@ if __name__ == '__main__':
     rank = 5
     book_nom = "GameFAQs4.csv"
     try:
-        page_num = save.read()
+        page_num = save.read()[0]
     except begin_resume.SaveNotFoundError:
         page_num = 0
         with open(book_nom, 'w+', encoding="utf-8") as report:
@@ -143,5 +149,4 @@ if __name__ == '__main__':
             report.write("\n".join(poem))
         page_num += 1
         save.write(page_num)
-        rank = float(rank)
     HI.clean()
