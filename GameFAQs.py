@@ -4,8 +4,8 @@ import asyncio
 import TableRead as HI
 
 
-def extract_date(html, name):
-    soup = HI.soupinit(html=html)
+async def extract_date(html, name):
+    soup = await HI.soupinit(html=html)
     content = soup.body.find("div", attrs={"class": "body pod_gameinfo_left"})
     if not content:
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
@@ -46,9 +46,9 @@ def extract_date(html, name):
     return date
 
 
-def extract_wankers(html, name):
+async def extract_wankers(html, name):
     # wankers in actually rankers, it's a joke gimeabreak
-    soup = HI.soupinit(html=html)
+    soup = await HI.soupinit(html=html)
     rate_text = soup.find("div", attrs={"id": "gs_rate_avg_hint", "class": "gamespace_rate_hint"})
     rate_text = HI.undiv(rate_text)
     wankers = ''
@@ -62,8 +62,8 @@ def extract_wankers(html, name):
     return wankers
 
 
-def extract_genres(html, name):
-    soup = HI.soupinit(html=html)
+async def extract_genres(html, name):
+    soup = await HI.soupinit(html=html)
     content = soup.body.find("div", attrs={"class": "body pod_gameinfo_left"})
     if not content:
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
@@ -95,7 +95,7 @@ def extract_genres(html, name):
 async def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
     page = genpage + str(page_num)
     print('\npage:', page, rank)
-    soup = HI.soupinit(url=page)
+    soup = await HI.soupinit(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
     tri = table.find_all('tr')
     poem = await asyncio.gather(*(extract_row(tr, cutoff_wankers, genre_ignore) for row_num, tr in enumerate(tri)))
@@ -112,16 +112,16 @@ async def extract_row(tr, cutoff_wankers, genre_ignore):
     game = home + HI.exhref(game)  # now a URL to game's own page
     name = name.replace(',', '.').replace('ū', 'u').replace('é', 'e').replace('ä', 'a')
     # '\u016b'='ū' '\u00e9'='é' '\xe4'='ä. é appears particularly in all them pokémon games.
-    game_html = HI.gethtml(game)
-    wankers = extract_wankers(game_html, name)
+    game_html = await HI.gethtml(game)
+    wankers = await extract_wankers(game_html, name)
     if int(wankers) < cutoff_wankers:
         print(f"{name} - rankers: {wankers}")
         return ''
-    genri = extract_genres(game_html, name)
+    genri = await extract_genres(game_html, name)
     if set(genre_ignore).intersection(genri):
         print(f"{name} - genres: {genri}")
         return ''
-    date = extract_date(game_html, name)
+    date = await extract_date(game_html, name)
     stanza = ",".join([name, system, rank, wankers, date])
     stanza = stanza.replace('&amp;', '&')
     print(stanza)
