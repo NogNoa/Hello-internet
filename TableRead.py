@@ -40,7 +40,7 @@ def exhref(txt):
     return new
 
 
-def re_gethtml(url, html):
+async def re_gethtml(url, html):
     print(url)
     errors.write(url + "\n\n")
     sleep(30)
@@ -52,20 +52,20 @@ def re_gethtml(url, html):
         return html"""
 
 
-def gethtml(url):
+async def gethtml(url):
     sleep(random.random() * 15)
     scroll = os.popen(f"wsl curl \"{url}\"")
     html = scroll.read()
     soup = BeautifulSoup(html, features="html.parser")
     if not soup.head or soup.head.title == "502 Bad Gateway" or \
         not soup.body or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
-        html = re_gethtml(url, html)
+        html = await re_gethtml(url, html)
     return html
 
 
-def soupinit(url=None, html=None):
+async def soupinit(url=None, html=None):
     if html is None:
-        html = gethtml(url)
+        html = await gethtml(url)
     """ready BeutifulSoup when loading a new page"""
     soup = BeautifulSoup(html, features="html.parser")
     return soup

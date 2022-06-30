@@ -98,7 +98,7 @@ async def extract_table(page_num, cutoff_wankers=0, genre_ignore=()):
     soup = HI.soupinit(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
     tri = table.find_all('tr')
-    poem = await asyncio.gather(extract_row(tr, cutoff_wankers, genre_ignore) for row_num, tr in enumerate(tri))
+    poem = await asyncio.gather(*(extract_row(tr, cutoff_wankers, genre_ignore) for row_num, tr in enumerate(tri)))
     return poem
 
 
@@ -108,7 +108,7 @@ async def extract_row(tr, cutoff_wankers, genre_ignore):
     game = td[1].a
     name = HI.undiv(game)
     system = HI.undiv(td[1].span)
-    rank = float(HI.undiv(td[2]))  # effective end point for side effect
+    rank = HI.undiv(td[2])  # effective end point for side effect
     game = home + HI.exhref(game)  # now a URL to game's own page
     name = name.replace(',', '.').replace('ū', 'u').replace('é', 'e').replace('ä', 'a')
     # '\u016b'='ū' '\u00e9'='é' '\xe4'='ä. é appears particularly in all them pokémon games.
@@ -128,13 +128,8 @@ async def extract_row(tr, cutoff_wankers, genre_ignore):
     return stanza
 
 
-def process_page(page_num):
-    poem = asyncio.run(extract_table(page_num, cutoff_wankers=25, genre_ignore=("sports",)))
-    with open(book_nom, 'a', encoding="utf-8") as report:
-        report.write("\n".join(poem))
-
-
 if __name__ == '__main__':
+
     import begin_resume
 
     home = "https://gamefaqs.gamespot.com"
@@ -150,7 +145,10 @@ if __name__ == '__main__':
         with open(book_nom, 'w+', encoding="utf-8") as report:
             report.write('Name,System,rating,rankers,date\n')
     while rank >= cutoff_rank:
-        process_page(page_num)
+        poem = asyncio.run(extract_table(page_num, cutoff_wankers=25, genre_ignore=("sports",)))
+        with open(book_nom, 'a', encoding="utf-8") as report:
+            report.write("\n".join(poem))
         page_num += 1
         save.write(page_num)
+        rank = float(rank)
     HI.clean()
