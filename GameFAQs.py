@@ -132,13 +132,13 @@ if __name__ == '__main__':
     rank = 5
     book_nom = "GameFAQs4.csv"
     try:
-        page_num, row_num = save.read()
+        page_num = save.read()
     except begin_resume.SaveNotFoundError:
         page_num = row_num = 0
         with open(book_nom, 'w+', encoding="utf-8") as report:
             report.write('Name,System,rating,rankers,date\n')
     while rank >= cutoff_rank:
-        extract_table(page_num, row_num, book_nom, cutoff_wankers=25, genre_ignore=("sports",))
+        extract_table(page_num, 0, book_nom, cutoff_wankers=25, genre_ignore=("sports",))
         page_num += 1
         row_num = 0
         save.write((page_num, row_num))
