@@ -2,7 +2,7 @@ import os
 import random
 from time import sleep
 
-import requests
+from aiohttp import ClientSession
 from bs4 import BeautifulSoup
 
 errors = open("errors_HI.log", 'w+', encoding="utf-8")
@@ -40,7 +40,7 @@ def exhref(txt):
     return new
 
 
-async def re_gethtml(url, html):
+async def re_gethtml(url):
     print(url)
     errors.write(url + "\n\n")
     sleep(30)
@@ -53,13 +53,14 @@ async def re_gethtml(url, html):
 
 
 async def gethtml(url):
-    sleep(random.random() * 5)
-    scroll = os.popen(f"wsl curl \"{url}\"")
-    html = scroll.read()
+    sleep(1 + random.random() * 2)
+    async with ClientSession() as session:
+        scroll = await session.request(method="GET", url=url)
+    html = await scroll.text()
     soup = BeautifulSoup(html, features="html.parser")
     if not soup.head or soup.head.title == "502 Bad Gateway" or \
         not soup.body or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
-        html = await re_gethtml(url, html)
+        html = await re_gethtml(url)
     print(f'page: {url}')
     return html
 

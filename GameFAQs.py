@@ -107,6 +107,7 @@ async def extract_row(tr, cutoff_wankers, genre_ignore):
     rank = HI.undiv(td[2])  # effective end point for side effect
     game = home + HI.exhref(game)  # now a URL to game's own page
     name = name.replace(',', '.').replace('ū', 'u').replace('é', 'e').replace('ä', 'a')
+    print(f"extract_row: {name}")
     # '\u016b'='ū' '\u00e9'='é' '\xe4'='ä. é appears particularly in all them pokémon games.
     game_soup = await HI.soupinit(game)
     wankers = extract_wankers(game_soup, name)
