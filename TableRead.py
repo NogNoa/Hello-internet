@@ -40,28 +40,11 @@ def exhref(txt):
     return new
 
 
-async def re_gethtml(url):
-    print(url)
-    errors.write(url + "\n\n")
-    sleep(30)
-    scroll = os.popen(f"wsl curl {url}")
-    return scroll.read()
-
-
-"""except selenium.common.exceptions.TimeoutException or selenium.common.exceptions.WebDriverException:
-        return html"""
-
-
-async def gethtml(url):
-    sleep(1 + random.random() * 2)
+async def gethtml(url, delay=1):
+    sleep(delay + random.random() * 2)
     async with ClientSession() as session:
         scroll = await session.request(method="GET", url=url)
     html = await scroll.text()
-    soup = BeautifulSoup(html, features="html.parser")
-    if not soup.head or soup.head.title == "502 Bad Gateway" or \
-        not soup.body or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
-        html = await re_gethtml(url)
-    print(f'page: {url}')
     return html
 
 
@@ -69,6 +52,12 @@ async def soupinit(url=None):
     html = await gethtml(url)
     """ready BeutifulSoup when loading a new page"""
     soup = BeautifulSoup(html, features="html.parser")
+    if not soup.head or soup.head.title == "502 Bad Gateway" or \
+        not soup.body or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
+        errors.write(url + "\n\n")
+        html = await gethtml(url, 27)
+        soup = BeautifulSoup(html, features="html.parser")
+    print(f'page: {url}')
     return soup
 
 
