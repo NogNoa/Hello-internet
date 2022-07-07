@@ -1,8 +1,7 @@
-import os
 import random
 from time import sleep
 
-from aiohttp import ClientSession
+import asyncio
 from bs4 import BeautifulSoup
 
 errors = open("errors_HI.log", 'w+', encoding="utf-8")
@@ -41,11 +40,11 @@ def exhref(txt):
 
 
 async def gethtml(url, delay=1):
+    proc = await asyncio.create_subprocess_exec("powershell", "Invoke-RestMethod", f"\"{url}\"",
+                                                stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
     sleep(delay + random.random() * 2)
-    async with ClientSession() as session:
-        scroll = await session.request(method="GET", url=url)
-    html = await scroll.text()
-    return html
+    html, err = await proc.communicate()
+    return html.decode("utf-8")
 
 
 async def soupinit(url=None):
@@ -53,7 +52,7 @@ async def soupinit(url=None):
     """ready BeutifulSoup when loading a new page"""
     soup = BeautifulSoup(html, features="html.parser")
     if not soup.head or soup.head.title == "502 Bad Gateway" or \
-        not soup.body or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
+           not soup.body or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
         errors.write(url + "\n\n")
         html = await gethtml(url, 27)
         soup = BeautifulSoup(html, features="html.parser")
