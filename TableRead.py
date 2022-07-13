@@ -39,12 +39,17 @@ def exhref(txt):
     return new
 
 
-async def gethtml(url, delay=1):
+async def gethtml(url, delay=1) -> str:
     proc = await asyncio.create_subprocess_exec("powershell", "Invoke-RestMethod", f"\"{url}\"",
                                                 stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
     sleep(delay + random.random() * 2)
+    print(f'fetching {url}')
     html, err = await proc.communicate()
-    return html.decode("utf-8")
+    try:
+        return html.decode("utf-8")
+    except UnicodeDecodeError as err:
+        print(err)
+        return ""
 
 
 async def soupinit(url=None):
@@ -56,7 +61,7 @@ async def soupinit(url=None):
         errors.write(url + "\n\n")
         html = await gethtml(url, 27)
         soup = BeautifulSoup(html, features="html.parser")
-    print(f'page: {url}')
+
     return soup
 
 
