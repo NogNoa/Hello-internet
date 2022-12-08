@@ -7,3 +7,4 @@ people.try
 *.log
 *.html
 *.sav
+*json

@@ -8,7 +8,7 @@ for line in linoi:
     date = date.split(' ')
     ln = len(date)
     if ln == 1:
-        if not date[0] in {'date', 'TBA', 'Canceled'}:  # we actually only looking for a year
+        if not date[0] in {'date', 'TBA', 'Canceled'}:  # we're actually only looking for a year
             date = ['december', date[0]]
     elif date[0][0] == 'Q':  # the first charecter of the first word is Q, a quarter rather than day.
         quart = int(date[0][1])  # the second charecter is the number of the quarter
