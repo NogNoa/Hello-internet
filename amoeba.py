@@ -1,4 +1,5 @@
 import os
+import random
 
 import requests
 
@@ -8,6 +9,9 @@ root_adress = "https://web.archive.org/web/20060106073452/http://www.cs.vu.nl/pu
 
 
 def save_as(local_path, file_type=""):
+    if os.path.exists(local_path) and os.path.getsize(local_path):
+        return
+    sleep(random.random()*10)
     resp = requests.get(root_adress + local_path)
     if not file_type:
         if resp.text.startswith("<!DOCTYPE HTML"):
@@ -16,7 +20,7 @@ def save_as(local_path, file_type=""):
             codex.write(resp.text)
     else:
         with open(local_path, "wb+") as codex:
-            codex.write(bytes(resp.text, encoding="ascii"))
+            codex.write(resp.content)
 
 
 def extract_directory(local_path):
