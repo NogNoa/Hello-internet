@@ -7,7 +7,7 @@ def ExtractTable(startpage):
     """extracts the information of all games from the table"""
     global cond
     page = gentable + "&startpage=" + str(startpage)
-    soup = HI.soupinit(url=page)
+    soup = HI.soup_init(url=page)
     content = soup.find("body").find("div", attrs={"id": "wrapper"}).find("div", attrs={"id": "main"})
     # try:
     # abort = content.find("div", attrs={"class": "newsitem"}).find("div", attrs={"class": "newsbody"})
@@ -41,7 +41,7 @@ def ExtractTable(startpage):
 
 
 def CheckLang(hkpg):
-    soup = HI.soupinit(url=hkpg)
+    soup = HI.soup_init(url=hkpg)
     languges = soup.find_all('td', attrs={'class': "col_8 Lang"})
     languges = [HI.undiv(lang) for lang in languges]
     return 'EN' in languges
