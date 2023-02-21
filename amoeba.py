@@ -13,10 +13,10 @@ def save_as(local_path, file_type=""):
         return
     sleep(random.random()*10)
     resp = requests.get(root_adress + local_path)
-    if not file_type:
+    if not file_type and resp.encoding:
         if resp.text.startswith("<!DOCTYPE HTML"):
             local_path += ".html"
-        with open(local_path, "w+", encoding=resp.apparent_encoding) as codex:
+        with open(local_path, "w+", encoding=resp.encoding) as codex:
             codex.write(resp.text)
     else:
         with open(local_path, "wb+") as codex:
