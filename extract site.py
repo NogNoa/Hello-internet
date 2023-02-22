@@ -9,11 +9,11 @@ from bs4 import BeautifulSoup
 root_adress = "https://"
 
 
-def save_as(local_path: str):
+def save_as(local_path: str, domain: str = root_adress):
     if os.path.exists(local_path) and os.path.getsize(local_path):
         return
     sleep(random.random() * 10)
-    resp = requests.get(root_adress + local_path)
+    resp = requests.get(domain + local_path)
     with open(local_path, "wb+") as codex:
         codex.write(resp.content)
     print(local_path)
@@ -82,9 +82,10 @@ def extract_site(local_path: str, wayback=False):
         except AttributeError:
             continue
         if link.startswith("http"):
-            if link.startswith(url):
-                link = link.lstrip(url)
-                save_as(local_path + link)
+            scheme, _, link = link.partition("://")
+            host, _, link = link.partition("/")
+            domain = scheme + "://" + host + "/"
+            save_as(local_path + link, domain)
         elif link.startswith("#"):
             continue
         else:
