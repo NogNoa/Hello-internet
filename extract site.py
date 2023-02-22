@@ -1,4 +1,5 @@
 import os
+from sys import argv
 
 import requests
 
@@ -15,6 +16,7 @@ def save_as(local_path: str):
     resp = requests.get(root_adress + local_path)
     with open(local_path, "wb+") as codex:
         codex.write(resp.content)
+    print(local_path)
 
 
 def wayback_strip(soup: BeautifulSoup) -> BeautifulSoup:
@@ -62,12 +64,15 @@ def extract_site(local_path: str, wayback=False):
     url = root_adress + local_path
     soup: BeautifulSoup = soup_init(url=url)
     try:
-        os.mkdir(local_path)
+        if local_path:
+            os.mkdir(local_path)
     except FileExistsError:
         pass
+    print(local_path)
     if wayback:
         soup = wayback_strip(soup)
-    with open(local_path, "w+") as codex:
+    codex_nom = url.split("/")[-2] + ".html"
+    with open(local_path + codex_nom, "w+", encoding="utf-8") as codex:
         codex.write(soup.text)
     for tag in soup.head:
         if tag.has_attr("href"):
@@ -85,6 +90,6 @@ def extract_site(local_path: str, wayback=False):
 
 
 if __name__ == "__main__":
-    root_adress = "https://web.archive.org/web/20060106073452/http://www.cs.vu.nl/pub/amoeba/"
-    os.chdir(r"G:\Source\sites\Amoeba")
-    extract_directory("amoeba5.3/")
+    root_adress = argv[1]
+    os.chdir(argv[2])
+    extract_site(argv[3])
