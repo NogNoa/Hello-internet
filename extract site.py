@@ -72,7 +72,9 @@ def extract_site(local_path: str, wayback=False):
     for tag in soup.head:
         if tag.has_attr("href"):
             link = tag["href"]
-            if link.startswith("http") and not link.startswith(root_adress):
+            if link.startswith("http") :
+                if link.startswith(url):
+                    link = link.lstrip(url)
                 save_as(local_path + link)
             elif link.startswith("#"):
                 continue
