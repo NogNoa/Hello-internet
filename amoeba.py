@@ -17,7 +17,15 @@ def save_as(local_path):
 
 
 def wayback_strip(soup):
-    for tag in soup.body:
+    for tag in soup.head:
+        tag.extract()
+        if tag.string == " End Wayback Rewrite JS Include ":
+            break
+    bodies = soup.body.__iter__()
+    for tag in bodies:
+        if tag.string == " BEGIN WAYBACK TOOLBAR INSERT ":
+            break
+    for tag in bodies:
         tag.extract()
         if tag.string == " END WAYBACK TOOLBAR INSERT ":
             break
