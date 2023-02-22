@@ -63,30 +63,36 @@ def extract_directory(local_path: str, wayback=False):
 def extract_site(local_path: str, wayback=False):
     url = root_adress + local_path
     soup: BeautifulSoup = soup_init(url=url)
+    codex_nom = local_path.split("/")[-2] + ".html"
     try:
         if local_path:
             os.mkdir(local_path)
     except FileExistsError:
-        pass
-    print(local_path)
+        if os.path.exists(local_path + codex_nom) and os.path.getsize(local_path + codex_nom):
+            return
     if wayback:
         soup = wayback_strip(soup)
-    codex_nom = url.split("/")[-2] + ".html"
+    for tag in soup.body:
+        link = ""
+        try:
+            if tag.has_attr("href"):
+                link = tag["href"]
+            elif tag.has_attr("src"):
+                link = tag["src"]
+        except AttributeError:
+            continue
+        if link.startswith("http"):
+            if link.startswith(url):
+                link = link.lstrip(url)
+                save_as(local_path + link)
+        elif link.startswith("#"):
+            continue
+        else:
+            extract_site(local_path + link)
+            save_as(local_path + tag["src"])
     with open(local_path + codex_nom, "w+", encoding="utf-8") as codex:
         codex.write(soup.text)
-    for tag in soup.head:
-        if tag.has_attr("href"):
-            link = tag["href"]
-            if link.startswith("http") :
-                if link.startswith(url):
-                    link = link.lstrip(url)
-                save_as(local_path + link)
-            elif link.startswith("#"):
-                continue
-            else:
-                extract_site(local_path + link)
-        if tag.has_attr("src"):
-            save_as(local_path + tag["src"])
+    print(local_path)
 
 
 if __name__ == "__main__":
