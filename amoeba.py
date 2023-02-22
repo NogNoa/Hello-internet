@@ -10,10 +10,18 @@ root_adress = "https://web.archive.org/web/20060106073452/http://www.cs.vu.nl/pu
 def save_as(local_path):
     if os.path.exists(local_path) and os.path.getsize(local_path):
         return
-    sleep(random.random()*10)
+    sleep(random.random() * 10)
     resp = requests.get(root_adress + local_path)
     with open(local_path, "wb+") as codex:
         codex.write(resp.content)
+
+
+def wayback_strip(soup):
+    for tag in soup.body:
+        tag.extract()
+        if tag.string == " END WAYBACK TOOLBAR INSERT ":
+            break
+    return soup
 
 
 def extract_directory(local_path):
@@ -21,11 +29,9 @@ def extract_directory(local_path):
     soup = soup_init(url=url)
     try:
         os.mkdir(local_path)
-    except FileExistsError: pass
-    for tag in soup.body:
-        tag.extract()
-        if tag.string == " END WAYBACK TOOLBAR INSERT ":
-            break
+    except FileExistsError:
+        pass
+    soup = wayback_strip(soup)
     for img in soup.body.find_all("img"):
         link = img.next.next["href"]
         if not link:
@@ -36,6 +42,8 @@ def extract_directory(local_path):
             save_as(local_path + link)
         elif suffix == "folder.gif":
             extract_directory(local_path + link)
+        elif suffix in {"blank.gif", "back.gif"}:
+            pass
         else:
             print(suffix)
 
