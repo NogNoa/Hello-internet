@@ -4,8 +4,7 @@ import requests
 
 from TableRead import *
 
-root_adress = "https://web.archive.org/web/20060106073452/http://www.cs.vu.nl/pub/amoeba/"
-
+root_adress = "https://"
 
 def save_as(local_path):
     if os.path.exists(local_path) and os.path.getsize(local_path):
@@ -32,14 +31,15 @@ def wayback_strip(soup):
     return soup
 
 
-def extract_directory(local_path):
+def extract_directory(local_path, wayback=False):
     url = root_adress + local_path
     soup = soup_init(url=url)
     try:
         os.mkdir(local_path)
     except FileExistsError:
         pass
-    soup = wayback_strip(soup)
+    if wayback:
+        soup = wayback_strip(soup)
     for img in soup.body.find_all("img"):
         link = img.next.next["href"]
         if not link:
@@ -55,7 +55,17 @@ def extract_directory(local_path):
         else:
             print(suffix)
 
+def extract_site(local_path, wayback=False):
+    url = root_adress + local_path
+    soup = soup_init(url=url)
+    try:
+        os.mkdir(local_path)
+    except FileExistsError:
+        pass
+    if wayback:
+        soup = wayback_strip(soup)
 
 if __name__ == "__main__":
+    root_adress = "https://web.archive.org/web/20060106073452/http://www.cs.vu.nl/pub/amoeba/"
     os.chdir(r"G:\Source\sites\Amoeba")
     extract_directory("amoeba5.3/")
