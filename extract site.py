@@ -20,7 +20,7 @@ def save_as(path: str, domain: str = root_adress):
 
 
 def save_as_foreign(name: str, inter: str, domain):
-    local_path = "/".join((".", inter, name))
+    local_path = "./" + inter + name
     if os.path.exists(local_path) and os.path.getsize(local_path):
         return
     try:
@@ -28,7 +28,7 @@ def save_as_foreign(name: str, inter: str, domain):
     except FileExistsError:
         pass
     sleep(random.random() * 10)
-    resp = requests.get("/".join((domain, inter, name)))
+    resp = requests.get(domain + inter + name)
     with open(local_path.replace("?", "_"), "wb+") as codex:
         codex.write(resp.content)
     print(local_path)
@@ -102,8 +102,8 @@ def extract_site(page: str, inter: str = "", wayback=False):
             continue
         if link.startswith("http"):
             adrs = link.split("/")
-            domain = "/".join(adrs[:3])
-            path = "/".join(adrs[3:-1])
+            domain = "/".join(adrs[:3]) + "/"
+            path = "/".join(adrs[3:-1]) + "/"
             name = adrs[-1]
             save_as_foreign(name, path, domain)
         elif link.startswith("#"):
