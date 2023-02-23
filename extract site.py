@@ -9,26 +9,17 @@ from bs4 import BeautifulSoup
 root_adress = "https://"
 
 
-def save_as(path: str, domain: str = root_adress):
-    if os.path.exists(path) and os.path.getsize(path):
-        return
-    sleep(random.random() * 10)
-    resp = requests.get(domain + path)
-    with open(path, "wb+") as codex:
-        codex.write(resp.content)
-    print(path)
-
-
-def save_as_foreign(name: str, inter: str, domain):
-    local_path = "./" + inter + name
+def save_as(name: str, inter: str, domain: str = root_adress):
+    local_path = inter + name
     if os.path.exists(local_path) and os.path.getsize(local_path):
         return
-    try:
-        os.mkdir("./" + inter)
-    except FileExistsError:
-        pass
+    if domain != root_adress:
+        try:
+            os.makedirs(inter,)
+        except FileExistsError:
+            pass
     sleep(random.random() * 10)
-    resp = requests.get(domain + inter + name)
+    resp = requests.get(domain + local_path)
     with open(local_path.replace("?", "_"), "wb+") as codex:
         codex.write(resp.content)
     print(local_path)
@@ -66,7 +57,7 @@ def extract_directory(local_path: str, wayback=False):
             continue
         suffix = img["src"].split("/")[-1]
         if suffix in {"unknown.gif", "compressed.gif", "tar.gif"}:
-            save_as(local_path + link)
+            save_as(link, local_path)
         elif suffix == "folder.gif":
             extract_directory(local_path + link)
         elif suffix in {"blank.gif", "back.gif"}:
@@ -105,12 +96,14 @@ def extract_site(page: str, inter: str = "", wayback=False):
             domain = "/".join(adrs[:3]) + "/"
             path = "/".join(adrs[3:-1]) + "/"
             name = adrs[-1]
-            save_as_foreign(name, path, domain)
+            save_as(name, path, domain)
         elif link.startswith("#"):
             continue
         else:
-            extract_site(link, local_path)
-            save_as(local_path + link)
+            if tag.has_attr("href"):
+                extract_site(link, local_path)
+            elif tag.has_attr("src"):
+                save_as(link, local_path)
     with open(local_path + codex_nom, "w+", encoding="utf-8") as codex:
         codex.write(soup.text)
     print(local_path)
