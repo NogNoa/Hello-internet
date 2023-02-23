@@ -11,16 +11,18 @@ root_adress = "https://"
 
 def save_as(name: str, inter: str, domain: str = root_adress):
     local_path = inter + name
-    if os.path.exists(local_path) and os.path.getsize(local_path):
+    friendly_path = local_path.replace("?", "_")
+    if os.path.exists(friendly_path) and os.path.getsize(friendly_path):
+        print(local_path)
         return
     if domain != root_adress:
         try:
-            os.makedirs(inter,)
+            os.makedirs(inter, )
         except FileExistsError:
             pass
     sleep(random.random() * 10)
     resp = requests.get(domain + local_path)
-    with open(local_path.replace("?", "_"), "wb+") as codex:
+    with open(friendly_path, "wb+") as codex:
         codex.write(resp.content)
     print(local_path)
 
@@ -78,6 +80,7 @@ def extract_site(page: str, inter: str = "", wayback=False):
         os.mkdir(".".join(codex_nom.split(".")[:-1]))
     except FileExistsError:
         if os.path.exists(local_path + codex_nom) and os.path.getsize(local_path + codex_nom):
+            print(local_path + codex_nom)
             return
     if wayback:
         soup = wayback_strip(soup)
@@ -113,3 +116,5 @@ if __name__ == "__main__":
     root_adress = argv[1]
     os.chdir(argv[2])
     extract_site(argv[3])
+
+# todo: travel children
