@@ -9,14 +9,14 @@ from bs4 import BeautifulSoup
 root_adress = "https://"
 
 
-def save_as(local_path: str, domain: str = root_adress):
-    if os.path.exists(local_path) and os.path.getsize(local_path):
+def save_as(path: str, domain: str = root_adress):
+    if os.path.exists(path) and os.path.getsize(path):
         return
     sleep(random.random() * 10)
-    resp = requests.get(domain + local_path)
-    with open(local_path, "wb+") as codex:
+    resp = requests.get(domain + path)
+    with open(path, "wb+") as codex:
         codex.write(resp.content)
-    print(local_path)
+    print(path)
 
 
 def wayback_strip(soup: BeautifulSoup) -> BeautifulSoup:
@@ -60,7 +60,8 @@ def extract_directory(local_path: str, wayback=False):
             print(suffix)
 
 
-def extract_site(local_path: str, wayback=False):
+def extract_site(page: str, inter: str = "", wayback=False):
+    local_path = inter + page
     url = root_adress + local_path
     soup: BeautifulSoup = soup_init(url=url)
     if local_path:
@@ -75,7 +76,6 @@ def extract_site(local_path: str, wayback=False):
     if wayback:
         soup = wayback_strip(soup)
     for tag in soup.body:
-        link = ""
         try:
             if tag.has_attr("href"):
                 link = tag["href"]
@@ -89,12 +89,13 @@ def extract_site(local_path: str, wayback=False):
             scheme, _, link = link.partition("://")
             host, _, link = link.partition("/")
             domain = scheme + "://" + host + "/"
-            save_as(local_path + link, domain)
+            link = link.split("/")[-1]
+            save_as(inter + link, domain)
         elif link.startswith("#"):
             continue
         else:
-            extract_site(local_path + link)
-            save_as(local_path + tag["src"])
+            extract_site(link, local_path)
+            save_as(local_path + link)
     with open(local_path + codex_nom, "w+", encoding="utf-8") as codex:
         codex.write(soup.text)
     print(local_path)
