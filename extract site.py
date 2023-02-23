@@ -19,6 +19,21 @@ def save_as(path: str, domain: str = root_adress):
     print(path)
 
 
+def save_as_foreign(name, inter, domain):
+    local_path = "./" + inter + name
+    if os.path.exists(local_path) and os.path.getsize(local_path):
+        return
+    try:
+        os.mkdir("./" + inter)
+    except FileExistsError:
+        pass
+    sleep(random.random() * 10)
+    resp = requests.get(domain + inter + name)
+    with open(local_path, "wb+") as codex:
+        codex.write(resp.content)
+    print(local_path)
+
+
 def wayback_strip(soup: BeautifulSoup) -> BeautifulSoup:
     for tag in soup.head:
         tag.extract()
@@ -90,7 +105,7 @@ def extract_site(page: str, inter: str = "", wayback=False):
             host, _, link = link.partition("/")
             domain = scheme + "://" + host + "/"
             link = link.split("/")[-1]
-            save_as(inter + link, domain)
+            save_as_foreign(link, inter, domain)
         elif link.startswith("#"):
             continue
         else:
