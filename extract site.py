@@ -4,7 +4,7 @@ from sys import argv
 import requests
 
 from TableRead import *
-from bs4 import BeautifulSoup
+import bs4
 
 root_adress = "https://"
 
@@ -27,7 +27,7 @@ def save_as(name: str, inter: str, domain: str = root_adress):
     print(local_path)
 
 
-def wayback_strip(soup: BeautifulSoup) -> BeautifulSoup:
+def wayback_strip(soup: bs4.BeautifulSoup) -> bs4.BeautifulSoup:
     for tag in soup.head:
         tag.extract()
         if tag.string == " End Wayback Rewrite JS Include ":
@@ -68,7 +68,7 @@ def extract_directory(local_path: str, wayback=False):
             print(suffix)
 
 
-def extract_tag(tag, local_path):
+def extract_tag(tag: bs4.element, local_path):
     try:
         for sub in tag.children:
             extract_tag(sub, local_path)
@@ -79,6 +79,8 @@ def extract_tag(tag, local_path):
             link = tag["href"]
         elif tag.has_attr("src"):
             link = tag["src"]
+        elif tag.has_attr("content"):
+            link = tag["content"]
         else:
             return
     except AttributeError:
@@ -94,13 +96,14 @@ def extract_tag(tag, local_path):
     else:
         if tag.has_attr("href"):
             extract_site(link, local_path)
-        elif tag.has_attr("src"):
+        elif tag.has_attr("src") or tag.has_attr("content"):
             save_as(link, local_path)
+
 
 def extract_site(page: str, inter: str = "", wayback=False):
     local_path = inter + page
     url = root_adress + local_path
-    soup: BeautifulSoup = soup_init(url=url)
+    soup: bs4.BeautifulSoup = soup_init(url=url)
     if local_path:
         codex_nom = local_path.split("/")[-2] + ".html"
     else:
@@ -113,7 +116,7 @@ def extract_site(page: str, inter: str = "", wayback=False):
             return
     if wayback:
         soup = wayback_strip(soup)
-    for tag in soup:
+    for tag in soup.html:
         extract_tag(tag, local_path)
     with open(local_path + codex_nom, "w+", encoding="utf-8") as codex:
         codex.write(soup.text)
