@@ -68,6 +68,35 @@ def extract_directory(local_path: str, wayback=False):
             print(suffix)
 
 
+def extract_tag(tag, local_path):
+    try:
+        for sub in tag.children:
+            extract_tag(sub, local_path)
+    except AttributeError:
+        pass
+    try:
+        if tag.has_attr("href"):
+            link = tag["href"]
+        elif tag.has_attr("src"):
+            link = tag["src"]
+        else:
+            return
+    except AttributeError:
+        return
+    if link.startswith("http"):
+        adrs = link.split("/")
+        domain = "/".join(adrs[:3]) + "/"
+        path = "/".join(adrs[3:-1]) + "/"
+        name = adrs[-1]
+        save_as(name, path, domain)
+    elif link.startswith("#"):
+        return
+    else:
+        if tag.has_attr("href"):
+            extract_site(link, local_path)
+        elif tag.has_attr("src"):
+            save_as(link, local_path)
+
 def extract_site(page: str, inter: str = "", wayback=False):
     local_path = inter + page
     url = root_adress + local_path
@@ -84,29 +113,8 @@ def extract_site(page: str, inter: str = "", wayback=False):
             return
     if wayback:
         soup = wayback_strip(soup)
-    for tag in soup.body:
-        try:
-            if tag.has_attr("href"):
-                link = tag["href"]
-            elif tag.has_attr("src"):
-                link = tag["src"]
-            else:
-                continue
-        except AttributeError:
-            continue
-        if link.startswith("http"):
-            adrs = link.split("/")
-            domain = "/".join(adrs[:3]) + "/"
-            path = "/".join(adrs[3:-1]) + "/"
-            name = adrs[-1]
-            save_as(name, path, domain)
-        elif link.startswith("#"):
-            continue
-        else:
-            if tag.has_attr("href"):
-                extract_site(link, local_path)
-            elif tag.has_attr("src"):
-                save_as(link, local_path)
+    for tag in soup:
+        extract_tag(tag, local_path)
     with open(local_path + codex_nom, "w+", encoding="utf-8") as codex:
         codex.write(soup.text)
     print(local_path)
