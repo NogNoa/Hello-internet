@@ -79,8 +79,6 @@ def extract_tag(tag: bs4.element, local_path):
             link = tag["href"]
         elif tag.has_attr("src"):
             link = tag["src"]
-        elif tag.has_attr("content"):
-            link = tag["content"]
         else:
             return
     except AttributeError:
@@ -96,7 +94,7 @@ def extract_tag(tag: bs4.element, local_path):
     else:
         if tag.has_attr("href"):
             extract_site(link, local_path)
-        elif tag.has_attr("src") or tag.has_attr("content"):
+        elif tag.has_attr("src"):
             save_as(link, local_path)
 
 
@@ -105,10 +103,11 @@ def extract_site(page: str, inter: str = "", wayback=False):
     url = root_adress + local_path
     soup: bs4.BeautifulSoup = soup_init(url=url)
     if local_path:
-        codex_nom = local_path.split("/")[-2] + ".html"
+        codex_nom = local_path.split("/")[-1] + ".html"
     else:
         codex_nom = root_adress.split("/")[-2] + ".html"
     try:
+        print(f"folder: {codex_nom}")
         os.mkdir(".".join(codex_nom.split(".")[:-1]))
     except FileExistsError:
         if os.path.exists(local_path + codex_nom) and os.path.getsize(local_path + codex_nom):
@@ -128,4 +127,4 @@ if __name__ == "__main__":
     os.chdir(argv[2])
     extract_site(argv[3])
 
-# todo: travel children
+# todo: infinite loop
