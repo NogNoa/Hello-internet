@@ -9,7 +9,7 @@ import bs4
 root_adress = "https://"
 
 
-def save_as(name: str, inter: str, domain: str = root_adress):
+def save_as(name: str, inter: str = '', domain: str = root_adress):
     local_path = inter + name
     friendly_path = local_path.replace("?", "_")
     if os.path.exists(friendly_path) and os.path.getsize(friendly_path):
@@ -68,7 +68,7 @@ def extract_directory(local_path: str, wayback=False):
             print(suffix)
 
 
-def extract_tag(tag: bs4.element, local_path):
+def extract_tag(tag: bs4.element, local_path=''):
     try:
         for sub in tag.children:
             extract_tag(sub, local_path)
@@ -91,6 +91,11 @@ def extract_tag(tag: bs4.element, local_path):
         save_as(name, path, domain)
     elif link.startswith("#"):
         return
+    elif link.startswith("/"):
+        if tag.has_attr("href"):
+            extract_site(link)
+        elif tag.has_attr("src"):
+            save_as(link)
     else:
         if tag.has_attr("href"):
             extract_site(link, local_path)
@@ -98,7 +103,7 @@ def extract_tag(tag: bs4.element, local_path):
             save_as(link, local_path)
 
 
-def extract_site(page: str, inter: str = "", wayback=False):
+def extract_site(page: str, inter: str = '', wayback=False):
     local_path = inter + page
     url = root_adress + local_path
     soup: bs4.BeautifulSoup = soup_init(url=url)
