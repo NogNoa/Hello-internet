@@ -105,8 +105,6 @@ def extract_tag(tag: bs4.element, local_path=''):
 
 def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
     local_path = (inter + page).rstrip("/")
-    url = root_adress + local_path
-    soup: bs4.BeautifulSoup = soup_init(url=url)
     if local_path:
         codex_nom = local_path.split("/")[-1] + ".html"
     else:
@@ -118,9 +116,12 @@ def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
         if os.path.exists(local_path + codex_nom) and os.path.getsize(local_path + codex_nom):
             print(local_path + codex_nom)
             return
+    soup: bs4.BeautifulSoup = soup_init(url=root_adress + local_path)
+    if soup.html:
+        soup = soup.html
     if wayback:
         soup = wayback_strip(soup)
-    for tag in soup.html:
+    for tag in soup:
         extract_tag(tag, local_path)
     with open(local_path + codex_nom, "w+", encoding="utf-8") as codex:
         codex.write(soup.text)
