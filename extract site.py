@@ -109,13 +109,13 @@ def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
         local_path += "/"
     url = root_adress + local_path
     soup: bs4.BeautifulSoup = soup_init(url=url)
-    if local_path:
+    if local_path.rstrip("/"):
         codex_nom = local_path.split("/")[-2] + ".html"
     else:
         codex_nom = root_adress.split("/")[-2] + ".html"
     try:
         print(f"folder: {codex_nom}")
-        os.mkdir(".".join(codex_nom.split(".")[:-1]))
+        os.mkdir(".".join(codex_nom.split(".")[:-1]).replace("?","_"))
     except FileExistsError:
         if os.path.exists(local_path + codex_nom) and os.path.getsize(local_path + codex_nom):
             print(local_path + codex_nom)
