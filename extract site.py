@@ -82,7 +82,7 @@ def extract_tag(tag: bs4.element, local_path=''):
             return
     except AttributeError:
         return
-    if link.strip("/") == local_path.strip("/"):
+    if link in memory:
         return
     if link.startswith("http"):
         adrs = link.split("/")
@@ -103,6 +103,7 @@ def extract_tag(tag: bs4.element, local_path=''):
 
 def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
     local_path = inter + page
+    memory.add(local_path)
     if local_path and local_path[-1] != "/":
         local_path += "/"
     url = root_adress + local_path
@@ -128,8 +129,9 @@ def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
 
 
 if __name__ == "__main__":
+    memory = set()
     root_adress = argv[1]
     os.chdir(argv[2])
     extract_page(argv[3])
 
-# todo: infinite loop
+# todo: bare '/' path
