@@ -11,6 +11,7 @@ root_adress = "https://"
 
 def save_as(name: str, inter: str = '', domain: str = root_adress):
     local_path = inter + name
+    memory.add(domain + local_path)
     friendly_path = local_path.replace("?", "_")
     if os.path.exists(friendly_path) and os.path.getsize(friendly_path):
         print(local_path)
