@@ -11,7 +11,6 @@ root_adress = "https://"
 
 def save_as(name: str, inter: str = '', domain: str = root_adress):
     local_path = inter + name
-    memory.add(domain + local_path)
     friendly_path = local_path.replace("?", "_")
     if os.path.exists(friendly_path) and os.path.getsize(friendly_path):
         print(local_path)
@@ -85,6 +84,8 @@ def extract_tag(tag: bs4.element, local_path=''):
         return
     if link in memory:
         return
+    else:
+        memory.add(link)
     if link.startswith("http"):
         adrs = link.split("/")
         domain = "/".join(adrs[:3]) + "/"
@@ -104,7 +105,6 @@ def extract_tag(tag: bs4.element, local_path=''):
 
 def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
     local_path = inter + page
-    memory.add(local_path)
     if local_path and local_path[-1] != "/":
         local_path += "/"
     elif local_path == "/":
