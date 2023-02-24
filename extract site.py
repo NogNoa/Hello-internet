@@ -72,13 +72,12 @@ def extract_tag(tag: bs4.element, local_path=''):
     try:
         for sub in tag.children:
             extract_tag(sub, local_path)
-    except AttributeError:
-        pass
-    try:
         if tag.has_attr("href"):
             link = tag["href"]
+            ext_func = extract_page
         elif tag.has_attr("src"):
             link = tag["src"]
+            ext_func = save_as
         else:
             return
     except AttributeError:
@@ -88,22 +87,19 @@ def extract_tag(tag: bs4.element, local_path=''):
         domain = "/".join(adrs[:3]) + "/"
         path = "/".join(adrs[3:-1]) + "/"
         name = adrs[-1]
-        save_as(name, path, domain)
+        if domain == root_adress:
+            ext_func(name, path, domaain=domain)
+        else:
+            save_as(name, path, domain)
     elif link.startswith("#"):
         return
     elif link.startswith("/"):
-        if tag.has_attr("href"):
-            extract_site(link)
-        elif tag.has_attr("src"):
-            save_as(link)
+        ext_func(link)
     else:
-        if tag.has_attr("href"):
-            extract_site(link, local_path)
-        elif tag.has_attr("src"):
-            save_as(link, local_path)
+        ext_func(link, local_path)
 
 
-def extract_site(page: str, inter: str = '', wayback=False):
+def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
     local_path = inter + page
     url = root_adress + local_path
     soup: bs4.BeautifulSoup = soup_init(url=url)
@@ -130,6 +126,6 @@ def extract_site(page: str, inter: str = '', wayback=False):
 if __name__ == "__main__":
     root_adress = argv[1]
     os.chdir(argv[2])
-    extract_site(argv[3])
+    extract_page(argv[3])
 
 # todo: infinite loop
