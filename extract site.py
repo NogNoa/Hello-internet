@@ -104,15 +104,11 @@ def extract_tag(tag: bs4.element, local_path=''):
 
 
 def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
-    local_path = inter + page
-    if local_path and local_path[-1] != "/":
-        local_path += "/"
-    elif local_path == "/":
-        return
+    local_path = (inter + page).rstrip("/")
     url = root_adress + local_path
     soup: bs4.BeautifulSoup = soup_init(url=url)
     if local_path:
-        codex_nom = local_path.split("/")[-2] + ".html"
+        codex_nom = local_path.split("/")[-1] + ".html"
     else:
         codex_nom = root_adress.split("/")[-2] + ".html"
     try:
@@ -132,8 +128,8 @@ def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
 
 
 if __name__ == "__main__":
-    memory = set()
     root_adress = argv[1]
+    memory = {root_adress, "/"}
     os.chdir(argv[2])
     extract_page(argv[3])
 
