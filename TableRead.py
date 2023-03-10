@@ -1,8 +1,11 @@
-import os
 import random
 from time import sleep
 
-from bs4 import BeautifulSoup
+
+# errors = open("errors_HI.log", 'w+', encoding="utf-8")
+
+class BadUrlError(ConnectionError):
+    pass
 
 
 def undiv(txt):
@@ -37,20 +40,25 @@ def exhref(txt):
     return new
 
 
-def gethtml(url, delay=1):
+def get_html(url, delay=1):
+    import requests
     sleep(delay + random.random() * 2)
-    scroll = os.popen(f"curl \"{url}\"")
-    return scroll.read()
+    scroll = requests.get(url)
+    return scroll.text
 
 
-def soupinit(url=None, html=None):
+def soup_init(url=None, html=None):
+    from bs4 import BeautifulSoup
     if html is None:
-        html = gethtml(url)
+        html = get_html(url)
     """ready BeutifulSoup when loading a new page"""
     soup = BeautifulSoup(html, features="html.parser")
     if not soup.head or soup.head.title == "502 Bad Gateway" or \
-           not soup.body or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
+       not soup.body or soup.body.find("pre") in {"Gateway Timeout", "I/O error"}:
         print(url)
-        html = gethtml(url, 27)
+        # errors.write(url + "\n\n")
+        html = get_html(url, 27)
         soup = BeautifulSoup(html, features="html.parser")
+    if soup.head and soup.head.title == "Not Found":
+        raise BadUrlError
     return soup
