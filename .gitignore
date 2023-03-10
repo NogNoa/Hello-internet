@@ -11,5 +11,5 @@ __pycache__/
 
 people.try
 table.txt
-python library history.txt
+python library history*.txt
 id.txt
