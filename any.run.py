@@ -43,4 +43,4 @@ if __name__ == '__main__':
     while True:
         extract_table(driver.page_source)
         next_loc.click()
-    HI.clean()
+

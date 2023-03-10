@@ -1,11 +1,14 @@
 venv/
 __pycache__/
 .idea/
+
 *.csv
 *.log
 *.html
 *.sav
-*json
+*.json
+*.bak
+
 people.try
 table.txt
 python library history.txt
