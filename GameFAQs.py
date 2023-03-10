@@ -2,7 +2,7 @@ import TableRead as HI
 
 
 def extract_date(html, name):
-    soup = HI.soupinit(html=html)
+    soup = HI.soup_init(html=html)
     content = soup.body.find("div", attrs={"class": "body pod_gameinfo_left"})
     if not content:
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
@@ -44,7 +44,7 @@ def extract_date(html, name):
 
 def extract_wankers(html, name):
     # wankers in actually rankers, it's a joke gimeabreak
-    soup = HI.soupinit(html=html)
+    soup = HI.soup_init(html=html)
     rate_text = soup.find("div", attrs={"id": "gs_rate_avg_hint", "class": "gamespace_rate_hint"})
     rate_text = HI.undiv(rate_text)
     wankers = ''
@@ -59,7 +59,7 @@ def extract_wankers(html, name):
 
 
 def extract_genres(html, name):
-    soup = HI.soupinit(html=html)
+    soup = HI.soup_init(html=html)
     content = soup.body.find("div", attrs={"class": "body pod_gameinfo_left"})
     if not content:
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
@@ -90,7 +90,7 @@ def extract_table(page_num, row_num, book_nom, cutoff_wankers=0, genre_ignore=()
     global rank
     page = genpage + str(page_num)
     print('\npage:', page, rank)
-    soup = HI.soupinit(url=page)
+    soup = HI.soup_init(url=page)
     table = soup.find("div", attrs={'class': 'main_content row'}).table.tbody
     tri = table.find_all('tr')
     while row_num < len(tri):
@@ -105,7 +105,7 @@ def extract_table(page_num, row_num, book_nom, cutoff_wankers=0, genre_ignore=()
         game = home + HI.exhref(game)  # now a URL to game's own page
         name = name.replace(',', '.').replace('ū', 'u').replace('é', 'e').replace('ä', 'a')
         # '\u016b'='ū' '\u00e9'='é' '\xe4'='ä. é appears particularly in all them pokémon games.
-        game_html = HI.gethtml(game)
+        game_html = HI.get_html(game)
         wankers = extract_wankers(game_html, name)
         if int(wankers) < cutoff_wankers:
             print(f"{name} - rankers: {wankers}")
