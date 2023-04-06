@@ -1,16 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
-
-urli = ["https://docs.python.org/release/1.4/lib/",
-        "https://docs.python.org/release/1.5/lib/",
-        "https://docs.python.org/release/1.5.1/lib/",
-        "https://docs.python.org/release/1.5.1p1/lib/",
-        "https://docs.python.org/release/1.5.2/lib/",
-        "https://docs.python.org/release/1.5.2p1/lib/",
-        "https://docs.python.org/release/1.5.2p2/lib/",
-        "https://docs.python.org/release/1.6/lib/",
-        "https://docs.python.org/release/2.0/lib/",
-        ]
+base_url = "https://docs.python.org/release/{ver}/lib/"
+vers = ["1.4", "1.5", "1.5.1", "1.5.1p1", "1.5.2",
+         "1.5.2p1", "1.5.2p2", "1.6", "2.0"]
 
 codex_nom = "python library history.txt"
 with open(codex_nom, "w+") as file:
@@ -18,11 +10,11 @@ with open(codex_nom, "w+") as file:
 
 seen_modules = set()
 
-for url in urli:
-    version = url.split("/")[4]
+for ver in vers:
     with open(codex_nom, "a") as file:
-        file.write(version + ":\n")
+        file.write(ver + ":\n")
 
+    url = base_url.format(ver)
     rsp = requests.get(url, verify=True, allow_redirects=True)
     soup = BeautifulSoup(rsp.text, features="html.parser")
     body = soup.body
