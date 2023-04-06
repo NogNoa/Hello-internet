@@ -132,6 +132,6 @@ if __name__ == "__main__":
     root_adress = argv[1]
     memory = {root_adress, "/"}
     os.chdir(argv[2])
-    extract_page(argv[3])
+    extract_directory(argv[3])
 
 # todo: infinite loop
