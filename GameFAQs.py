@@ -1,4 +1,9 @@
+import logging
+
+# noinspection PyPep8Naming
 import TableRead as HI
+
+logging.basicConfig(filename="errors_HI.log", encoding="utf-8")
 
 
 def extract_date(html, name):
@@ -8,8 +13,7 @@ def extract_date(html, name):
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
     if not content:
         print("no idea where right table is", html)
-        with open("errors.log", 'a+', encoding="utf-8") as errors:
-            errors.write("extract_date: No right table found:" + name + "\n" + html + "\n\n")
+        logging.error("extract_date: No right table found:" + name + "\n" + html + "\n")
         return "Unknown"
     content = content.ol if content.ol else content.ul
     lii = content.find_all("li")
@@ -18,12 +22,12 @@ def extract_date(html, name):
         if b.startswith("Release"):
             date = li.find("a", href=True)
             break
-
-    if "date" not in locals():
-        with open("errors.log", 'a+', encoding="utf-8") as errors:
-            errors.write("No Date Found:" + html)
+    try:
+        # noinspection PyUnboundLocalVariable
+        date
+    except NameError:
+        logging.error("No Date Found:" + html)
         return "Unknown"
-
     date = HI.undiv(date)
     date = date.split(' ')
     date = [i for i in date if i != '']
@@ -31,7 +35,7 @@ def extract_date(html, name):
     if ln > 2:
         date = [date[1], date[0], date[2]]
     elif ln == 1:
-        if not date[0] in {'TBA', 'Canceled'}:  # we actually only looking for a year
+        if not date[0] in {'TBA', 'Canceled'}:  # we are actually only looking for a year
             date = ['december', date[0]]
     else:
         if date[0][0] == 'Q':  # the first character of the first word is Q, a quarter rather than day.
@@ -52,8 +56,7 @@ def extract_wankers(html, name):
         if char in '0123456789':
             wankers += char
     if wankers == '':
-        with open("errors.log", 'a+', encoding="utf-8") as errors:
-            errors.write("No Wankers: " + name + "\n")
+        logging.error("No Wankers: " + name + "\n")
         return '0'
     return wankers
 
@@ -65,8 +68,7 @@ def extract_genres(html, name):
         content = soup.body.find("div", attrs={"class": "pod pod_gameinfo"})
     if not content:
         print("no idea where right table is", html)
-        with open("errors.log", 'a+', encoding="utf-8") as errors:
-            errors.write("extract_genres:No right table found:" + name + "\n" + html + "\n\n")
+        logging.error("extract_genres:No right table found:" + name + "\n" + html + "\n\n")
         return ["Unknown"]
     content = content.ol if content.ol else content.ul
     lii = content.find_all("li")
@@ -75,12 +77,12 @@ def extract_genres(html, name):
         if b.startswith("Genre"):
             genri = li
             break
-
-    if "genri" not in locals():
-        with open("errors.log", 'a+', encoding="utf-8") as errors:
-            errors.write("No Genres Found:" + name + "\n" + html + "\n\n")
+    try:
+        # noinspection PyUnboundLocalVariable
+        genri
+    except NameError:
+        logging.error("No Genres Found:" + name + "\n" + html + "\n\n")
         return ["Unknown"]
-
     genri = genri.find_all("a", href=True)
     genri = [HI.undiv(genre).lower() for genre in genri]
     return genri
@@ -143,4 +145,3 @@ if __name__ == '__main__':
         row_num = 0
         save.write((page_num, row_num))
         rank = float(rank)
-    HI.clean()
