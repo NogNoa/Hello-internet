@@ -70,8 +70,7 @@ def extract_directory(local_path: str, wayback=False):
 
 def extract_tag(tag: bs4.element, local_path=''):
     try:
-        for sub in tag.children:
-            extract_tag(sub, local_path)
+        tuple(extract_tag(sub, local_path) for sub in tag.children if isinstance(sub, bs4.Tag))
         if tag.has_attr("href"):
             link = tag["href"]
             ext_func = extract_page
@@ -104,6 +103,7 @@ def extract_tag(tag: bs4.element, local_path=''):
 
 
 def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
+    if not inter.startswith("/"): inter = inter + '/'
     local_path = (inter + page).rstrip("/")
     if local_path:
         codex_nom = local_path.split("/")[-1] + ".html"
@@ -132,6 +132,9 @@ if __name__ == "__main__":
     root_adress = argv[1]
     memory = {root_adress, "/"}
     os.chdir(argv[2])
-    extract_directory(argv[3])
+    if argv[3].startswith('dir'):
+        extract_directory(argv[4])
+    elif argv[3].startswith('page'):
+        extract_page(argv[4])
 
 # todo: infinite loop
