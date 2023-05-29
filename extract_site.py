@@ -6,22 +6,37 @@ import requests
 from TableRead import *
 import bs4
 
-root_adress = "https://"
+root_scheme = "https://"
 
 
-def save_as(name: str, inter: str = '', domain: str = root_adress):
+def path_build(codex_nom: str):
+    folder_nom = ""
+    for fldr in codex_nom.split("/")[:-1]:
+        folder_nom += f"{fldr}/"
+        print(f"folder: {folder_nom}")
+        try:
+            os.mkdir(folder_nom)
+        except FileExistsError:
+            if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
+                print(codex_nom)
+                return
+
+
+def save_as(name: str, inter: str = '', scheme: str = root_scheme):
     local_path = inter + name
     win_path = local_path.replace("?", "_")
     if os.path.exists(win_path) and os.path.getsize(win_path):
         print(local_path)
         return
-    if domain != root_adress:
-        try:
-            os.makedirs(inter, )
-        except FileExistsError:
-            pass
+    # if domain != scheme:
+    #     try:
+    #         os.makedirs(inter, )
+    #     except FileExistsError:
+    #         pass
+    if name.split("/")[:-1]:
+        path_build(local_path)
     sleep(random.random() * 10)
-    resp = requests.get(domain + local_path)
+    resp = requests.get(scheme + local_path)
     with open(win_path, "wb+") as codex:
         codex.write(resp.content)
     print(local_path)
@@ -91,13 +106,16 @@ def extract_tag(tag: bs4.element, local_path=''):
         memory.add(link)
     if link.startswith("http"):
         adrs = link.split("/")
-        domain = "/".join(adrs[:3]) + "/"
+        scheme = "/".join(adrs[:2]) + "/"
+        domain = (adrs[2]) + "/"
         path = "/".join(adrs[3:-1]) + "/"
         name = adrs[-1]
         if domain == root_adress:
-            ext_func(name, path, domaain=domain)
+            ext_func(name, domain+path, scheme=scheme)
+        elif domain in root_adress:
+            return
         else:
-            save_as(name, path, domain)
+            save_as(name, domain+path, scheme)
     elif link.startswith("#"):
         return
     elif link.startswith("/"):
@@ -107,43 +125,26 @@ def extract_tag(tag: bs4.element, local_path=''):
 
 
 def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
-    if inter and not inter.endswith("/"): inter = inter + '/'
-    local_path = (inter + page).rstrip("/")
-    if local_path:
-        codex_nom = local_path.split("/")[-1] + ".html"
-    else:
-        codex_nom = root_adress.split("/")[-2] + ".html"
-    folder_nom = ".".join(codex_nom.split(".")[:-1]).replace("?", "_")
-    print(f"folder: {folder_nom}")
-    try:
-        os.mkdir(folder_nom)
-    except FileExistsError:
-        if os.path.exists(local_path + codex_nom) and os.path.getsize(local_path + codex_nom):
-            print(local_path + codex_nom)
-            return
-    soup: bs4.BeautifulSoup = soup_init(url=root_adress + local_path)
-    if soup.html:
-        soup = soup.html
+    inter = inter.rstrip('/') + '/'
+    local_path = inter + page
+    codex_nom = local_path.rstrip(".html") + ".html"
+    if page.split("/"):
+        path_build(local_path)
+    soup: bs4.BeautifulSoup = soup_init(url=root_scheme + local_path)
+    if soup.html: soup = soup.html
     if wayback:
         soup = wayback_strip(soup)
     for tag in soup:
         extract_tag(tag, local_path)
-    with open(local_path + codex_nom, "w+", encoding="utf-8") as codex:
+    with open(codex_nom, "w+", encoding="utf-8") as codex:
         codex.write(soup.text)
     print(local_path)
 
 
 def extract_site(wayback=False, **kwargs):
     codex_nom = root_adress.rstrip("/") + "/index.html"
-    for folder_nom in codex_nom.split("/")[:-1]:
-        print(f"folder: {folder_nom}")
-        try:
-            os.mkdir(folder_nom)
-        except FileExistsError:
-            if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
-                print(codex_nom)
-                return
-    soup: bs4.BeautifulSoup = soup_init(url=f"{scheme}://{root_adress}")
+    path_build(codex_nom)
+    soup: bs4.BeautifulSoup = soup_init(url=root_scheme + root_adress)
     if soup.html: soup = soup.html
     if wayback:
         soup = wayback_strip(soup)
@@ -156,12 +157,17 @@ def extract_site(wayback=False, **kwargs):
 
 if __name__ == "__main__":
     root_adress = argv[1]
-    scheme, _, root_adress = root_adress.partition("://")
+    root_scheme, _, root_adress = root_adress.partition("://")
+    if root_adress:
+        root_scheme += "://"
+    else:
+        root_adress = root_scheme
+        root_scheme = "http://"
     memory = {root_adress, "/"}
     os.chdir(argv[2])
     if argv[3].startswith('dir'):
-        extract_directory(argv[4])
+        extract_directory(argv[1])
     elif argv[3].startswith('page'):
-        extract_page(argv[4])
+        extract_page(argv[1])
 
 # todo: infinite loop
