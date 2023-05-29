@@ -70,10 +70,14 @@ def extract_directory(local_path: str, wayback=False):
 
 def extract_tag(tag: bs4.element, local_path=''):
     try:
-        tuple(extract_tag(sub, local_path) for sub in tag.children if isinstance(sub, bs4.Tag))
+        for sub in tag.children:
+            if isinstance(sub, bs4.Tag): extract_tag(sub, local_path)
         if tag.has_attr("href"):
             link = tag["href"]
-            ext_func = extract_page
+            if tag.has_attr("rel") and tag["rel"][0] == "stylesheet":
+                ext_func = save_as
+            else:
+                ext_func = extract_page
         elif tag.has_attr("src"):
             link = tag["src"]
             ext_func = save_as
@@ -103,15 +107,16 @@ def extract_tag(tag: bs4.element, local_path=''):
 
 
 def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
-    if not inter.startswith("/"): inter = inter + '/'
+    if inter and not inter.endswith("/"): inter = inter + '/'
     local_path = (inter + page).rstrip("/")
     if local_path:
         codex_nom = local_path.split("/")[-1] + ".html"
     else:
         codex_nom = root_adress.split("/")[-2] + ".html"
+    folder_nom = ".".join(codex_nom.split(".")[:-1]).replace("?", "_")
+    print(f"folder: {folder_nom}")
     try:
-        print(f"folder: {codex_nom}")
-        os.mkdir(".".join(codex_nom.split(".")[:-1]).replace("?", "_"))
+        os.mkdir(folder_nom)
     except FileExistsError:
         if os.path.exists(local_path + codex_nom) and os.path.getsize(local_path + codex_nom):
             print(local_path + codex_nom)
@@ -128,8 +133,30 @@ def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
     print(local_path)
 
 
+def extract_site(wayback=False, **kwargs):
+    codex_nom = root_adress.rstrip("/") + "/index.html"
+    for folder_nom in codex_nom.split("/")[:-1]:
+        print(f"folder: {folder_nom}")
+        try:
+            os.mkdir(folder_nom)
+        except FileExistsError:
+            if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
+                print(codex_nom)
+                return
+    soup: bs4.BeautifulSoup = soup_init(url=f"{scheme}://{root_adress}")
+    if soup.html: soup = soup.html
+    if wayback:
+        soup = wayback_strip(soup)
+    for tag in soup:
+        extract_tag(tag, root_adress)
+    with open(codex_nom, "w+", encoding="utf-8") as codex:
+        codex.write(soup.text)
+    print(codex_nom)
+
+
 if __name__ == "__main__":
     root_adress = argv[1]
+    scheme, _, root_adress = root_adress.partition("://")
     memory = {root_adress, "/"}
     os.chdir(argv[2])
     if argv[3].startswith('dir'):
