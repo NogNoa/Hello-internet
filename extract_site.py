@@ -5,8 +5,10 @@ import requests
 
 from TableRead import *
 import bs4
+import logging
 
 root_scheme = "https://"
+logging.basicConfig(filename="extract-site.log")
 
 
 def path_build(codex_nom: str):
@@ -19,20 +21,15 @@ def path_build(codex_nom: str):
         except FileExistsError:
             if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
                 print(codex_nom)
-                return
 
 
 def save_as(name: str, inter: str = '', scheme: str = root_scheme):
+    if inter: inter = inter.rstrip("/") + "/"
     local_path = inter + name
     win_path = local_path.replace("?", "_")
     if os.path.exists(win_path) and os.path.getsize(win_path):
         print(local_path)
         return
-    # if domain != scheme:
-    #     try:
-    #         os.makedirs(inter, )
-    #     except FileExistsError:
-    #         pass
     if name.split("/")[:-1]:
         path_build(local_path)
     sleep(random.random() * 10)
@@ -100,24 +97,22 @@ def extract_tag(tag: bs4.element, local_path=''):
             return
     except AttributeError:
         return
+    if "#" in link:
+        return
     if link in memory:
         return
     else:
         memory.add(link)
     if link.startswith("http"):
         adrs = link.split("/")
-        scheme = "/".join(adrs[:2]) + "/"
         domain = (adrs[2]) + "/"
-        path = "/".join(adrs[3:-1]) + "/"
-        name = adrs[-1]
         if domain == root_adress:
-            ext_func(name, domain+path, scheme=scheme)
-        elif domain in root_adress:
-            return
+            scheme = "/".join(adrs[:2]) + "/"
+            path = "/".join(adrs[3:-1]) + "/"
+            name = adrs[-1]
+            ext_func(name, domain + path, scheme=scheme)
         else:
-            save_as(name, domain+path, scheme)
-    elif link.startswith("#"):
-        return
+            return
     elif link.startswith("/"):
         ext_func(link)
     else:
@@ -125,33 +120,44 @@ def extract_tag(tag: bs4.element, local_path=''):
 
 
 def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
-    inter = inter.rstrip('/') + '/'
-    local_path = inter + page
-    codex_nom = local_path.rstrip(".html") + ".html"
-    if page.split("/"):
+    if inter: inter = inter.rstrip('/') + '/'
+    if page.endswith("/"):
+        local_path = inter + page
+        codex_nom = local_path.rstrip("/") + ".html"
+        url = root_scheme + local_path
+    elif page.endswith(".html"):
+        local_path = inter
+        codex_nom = inter + page
+        url = root_scheme + codex_nom
+        if url == root_adress + "index.html":
+            return
+    else:
+        logging.error(f"page:{page}, inter:{inter}")
+        return
+    if page.split("/")[:-1]:
         path_build(local_path)
-    soup: bs4.BeautifulSoup = soup_init(url=root_scheme + local_path)
+    soup: bs4.BeautifulSoup = soup_init(url=url)
     if soup.html: soup = soup.html
     if wayback:
         soup = wayback_strip(soup)
     for tag in soup:
-        extract_tag(tag, local_path)
+        if isinstance(tag, bs4.Tag): extract_tag(tag, local_path)
     with open(codex_nom, "w+", encoding="utf-8") as codex:
-        codex.write(soup.text)
-    print(local_path)
+        codex.write(str(soup))
+    print(codex_nom)
 
 
 def extract_site(wayback=False, **kwargs):
-    codex_nom = root_adress.rstrip("/") + "/index.html"
+    codex_nom = root_adress + "index.html"
     path_build(codex_nom)
     soup: bs4.BeautifulSoup = soup_init(url=root_scheme + root_adress)
     if soup.html: soup = soup.html
     if wayback:
         soup = wayback_strip(soup)
     for tag in soup:
-        extract_tag(tag, root_adress)
+        if isinstance(tag, bs4.Tag): extract_tag(tag, root_adress)
     with open(codex_nom, "w+", encoding="utf-8") as codex:
-        codex.write(soup.text)
+        codex.write(str(soup))
     print(codex_nom)
 
 
@@ -163,11 +169,12 @@ if __name__ == "__main__":
     else:
         root_adress = root_scheme
         root_scheme = "http://"
+    root_adress = root_adress.rstrip("/") + "/"
     memory = {root_adress, "/"}
     os.chdir(argv[2])
     if argv[3].startswith('dir'):
         extract_directory(argv[1])
     elif argv[3].startswith('page'):
-        extract_page(argv[1])
+        extract_site()
 
 # todo: infinite loop
