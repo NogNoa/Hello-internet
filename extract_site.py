@@ -26,15 +26,15 @@ def path_build(codex_nom: str):
 def save_as(name: str, inter: str = '', scheme: str = root_scheme):
     if inter: inter = inter.rstrip("/") + "/"
     local_path = inter + name
-    win_path = local_path.replace("?", "_")
-    if os.path.exists(win_path) and os.path.getsize(win_path):
+    codex_nom = local_path
+    if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
         print(local_path)
         return
     if name.split("/")[:-1]:
         path_build(local_path)
     sleep(random.random() * 10)
     resp = requests.get(scheme + local_path)
-    with open(win_path, "wb+") as codex:
+    with open(codex_nom, "wb+") as codex:
         codex.write(resp.content)
     print(local_path)
 
@@ -97,13 +97,11 @@ def extract_tag(tag: bs4.element, local_path=''):
             return
     except AttributeError:
         return
-    if "#" in link:
+    link = link.partition("#")[0].partition("?")[0]
+    if any((link in memory, local_path + link in memory, root_adress + link in memory)):
         return
-    if link in memory:
-        return
-    else:
-        memory.add(link)
     if link.startswith("http"):
+        memory.add(link)
         adrs = link.split("/")
         domain = (adrs[2]) + "/"
         if domain == root_adress:
@@ -114,8 +112,10 @@ def extract_tag(tag: bs4.element, local_path=''):
         else:
             return
     elif link.startswith("/"):
+        memory.add(root_adress + link)
         ext_func(link)
     else:
+        memory.add(local_path + link)
         ext_func(link, local_path)
 
 
