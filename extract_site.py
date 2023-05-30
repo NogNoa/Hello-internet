@@ -18,25 +18,31 @@ def path_build(codex_nom: str):
         print(f"folder: {folder_nom}")
         try:
             os.mkdir(folder_nom)
+            print(folder_nom)
         except FileExistsError:
-            if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
-                print(codex_nom)
+            pass
 
 
-def save_as(name: str, inter: str = '', scheme: str = root_scheme):
+def save_as(name: str, inter: str = ''):
     if inter: inter = inter.rstrip("/") + "/"
     local_path = inter + name
+    sleep(random.random() * 10)
+    resp = requests.get(root_scheme + local_path)
     codex_nom = local_path
+    if resp.text.lower().startswith(("<!doctype html>", "<html>")):
+        if local_path == root_adress + "index.html":
+            return
+        extract_children(name, inter)
+        if not name.endswith(".html"):
+            codex_nom = local_path.rstrip("/") + "index.html"
     if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
-        print(local_path)
+        print(codex_nom)
         return
     if name.split("/")[:-1]:
         path_build(local_path)
-    sleep(random.random() * 10)
-    resp = requests.get(scheme + local_path)
     with open(codex_nom, "wb+") as codex:
         codex.write(resp.content)
-    print(local_path)
+    print(codex_nom)
 
 
 def wayback_strip(soup: bs4.BeautifulSoup) -> bs4.BeautifulSoup:
@@ -83,16 +89,11 @@ def extract_directory(local_path: str, wayback=False):
 def extract_tag(tag: bs4.element, local_path=''):
     try:
         for sub in tag.children:
-            if isinstance(sub, bs4.Tag): extract_tag(sub, local_path)
+            if not isinstance(sub, bs4.NavigableString): extract_tag(sub, local_path)
         if tag.has_attr("href"):
             link = tag["href"]
-            if tag.has_attr("rel") and tag["rel"][0] == "stylesheet":
-                ext_func = save_as
-            else:
-                ext_func = extract_page
         elif tag.has_attr("src"):
             link = tag["src"]
-            ext_func = save_as
         else:
             return
     except AttributeError:
@@ -105,46 +106,26 @@ def extract_tag(tag: bs4.element, local_path=''):
         adrs = link.split("/")
         domain = (adrs[2]) + "/"
         if domain == root_adress:
-            scheme = "/".join(adrs[:2]) + "/"
             path = "/".join(adrs[3:-1]) + "/"
             name = adrs[-1]
-            ext_func(name, domain + path, scheme=scheme)
+            save_as(path + name, domain)
         else:
             return
     elif link.startswith("/"):
         memory.add(root_adress + link)
-        ext_func(link)
+        save_as(link)
     else:
         memory.add(local_path + link)
-        ext_func(link, local_path)
+        save_as(link, local_path)
 
 
-def extract_page(page: str, inter: str = '', wayback=False, **kwargs):
-    if inter: inter = inter.rstrip('/') + '/'
-    if page.endswith("/"):
-        local_path = inter + page
-        codex_nom = local_path.rstrip("/") + ".html"
-        url = root_scheme + local_path
-    elif page.endswith(".html"):
-        local_path = inter
-        codex_nom = inter + page
-        url = root_scheme + codex_nom
-        if url == root_adress + "index.html":
-            return
-    else:
-        logging.error(f"page:{page}, inter:{inter}")
-        return
-    if page.split("/")[:-1]:
-        path_build(local_path)
-    soup: bs4.BeautifulSoup = soup_init(url=url)
+def extract_children(page: str, inter, wayback=False):
+    soup: bs4.BeautifulSoup = soup_init(url=root_scheme + inter + page)
     if soup.html: soup = soup.html
     if wayback:
         soup = wayback_strip(soup)
     for tag in soup:
-        if isinstance(tag, bs4.Tag): extract_tag(tag, local_path)
-    with open(codex_nom, "w+", encoding="utf-8") as codex:
-        codex.write(str(soup))
-    print(codex_nom)
+        if isinstance(tag, bs4.Tag): extract_tag(tag, inter+ page.partition(".")[0])
 
 
 def extract_site(wayback=False, **kwargs):
