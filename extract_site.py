@@ -33,15 +33,15 @@ class Link:
             scheme = root_scheme
             domain = root_adress
             link = link[0]
+        if link.startswith("/"):
+            link.strip("/")
+        else:
+            link = local_path + link
         link = link.rsplit("/", 1)
         if len(link) == 2 and link[1]:
             path, file = link[0], link[1]
         else:
-            path, file = link[0], ""
-        if path.startswith("/"):
-            path.strip("/")
-        else:
-            path = local_path + path
+            path, file = ("", link[0]) if ("." in link[0]) else (link[0], "")
         base, ext = file.split(".")
         path = path.rstrip("/") + "/"
         return Link(scheme, domain, path, base, ext)
@@ -74,6 +74,8 @@ path                    === {local_path}/{<}/index.html
 path/                   === {local_path}/{<}index.html
 /path                   === {root_adress}/{<}/index.html
 /path/                  === {root_adress}/{<}index.html
+base.ext                === {local_path}/{<}
+/base.ext               === {root_adress}{<}
 """
 
 
