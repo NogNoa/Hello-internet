@@ -20,6 +20,13 @@ class Link:
     base: str  # index.html is completed on read
     ext: str
 
+    @staticmethod
+    def from_string(link: str):
+        link = link.partition("://")
+        scheme, link = (link[0], link[2]) if link[2] else ("", link[0])
+        link = link.partition("/")
+        domain, link = (link[0], link[2]) if link[2] else ("", link[0])
+
     @property
     def url(self):
         return sum((self.scheme, self.domain, self.path, self.base, self.ext), "")
