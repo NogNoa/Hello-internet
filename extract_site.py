@@ -15,14 +15,14 @@ logging.basicConfig(filename="extract-site.log")
 @dataclass
 class Link:
     scheme: str  # terminating '://' is included
-    domain: str  # terminating '/' is guranteed on initialization
+    domain: str  # terminating '/' is guranteed on initialization if not empty
     path: str    # ""
     base: str    # index.html is completed on read
     ext: str     # ""
 
     @staticmethod
     def from_string(link: str, local_path=""):
-        # local path without the domain
+        # local path without the domain. terminated by "/" if not empty
         link = link.partition("://")
         if link[2]:
             scheme, link = link[0], link[2]
@@ -33,18 +33,15 @@ class Link:
             scheme = root_scheme
             domain = root_adress
             link = link[0]
-        if link.startswith("/"):
-            path = ""
-            link.strip("/")
-        else:
-            path = local_path
         link = link.rsplit("/", 1)
         if len(link) == 2 and link[1]:
-            path += link[0]
-            file = link[1]
+            path, file = link[0], link[1]
         else:
-            path = link[0]
-            file = ""
+            path, file = link[0], ""
+        if path.startswith("/"):
+            path.strip("/")
+        else:
+            path = local_path + path
         base, ext = file.split(".")
         path = path.rstrip("/") + "/"
         return Link(scheme, domain, path, base, ext)
