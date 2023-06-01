@@ -15,17 +15,34 @@ logging.basicConfig(filename="extract-site.log")
 @dataclass
 class Link:
     scheme: str  # terminating '://' is included
-    domain: str
-    path: str  # terminating '/' is guranteed on initialization
-    base: str  # index.html is completed on read
-    ext: str
+    domain: str  # terminating '/' is guranteed on initialization
+    path: str    # ""
+    base: str    # index.html is completed on read
+    ext: str     # ""
 
     @staticmethod
     def from_string(link: str):
         link = link.partition("://")
-        scheme, link = (link[0], link[2]) if link[2] else ("", link[0])
-        link = link.partition("/")
-        domain, link = (link[0], link[2]) if link[2] else ("", link[0])
+        if link[2]:
+            scheme, link = link[0], link[2]
+            scheme += "://"
+            domain, _, link = link.partition("/")
+            domain += "/"
+        else:
+            link = link[0]
+        if link.startswith("/"):
+            scheme = root_scheme
+            domain = root_adress
+            link.strip("/")
+        link = link.rsplit("/", 1)
+        if len(link) == 2 and link[1]:
+            path, file = link[0], link[1]
+        else:
+            path = link[0]
+            file = ""
+        base, ext = file.split(".")
+        path = path.rstrip("/") + "/"
+        return Link(scheme, domain, path, base, ext)
 
     @property
     def url(self):
