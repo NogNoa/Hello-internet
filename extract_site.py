@@ -1,4 +1,5 @@
 import os
+from dataclasses import dataclass
 from sys import argv
 
 import requests
@@ -9,6 +10,45 @@ import logging
 
 root_scheme = "https://"
 logging.basicConfig(filename="extract-site.log")
+
+
+@dataclass
+class Link:
+    scheme: str  # terminating '://' is included
+    domain: str
+    path: str  # terminating '/' is guranteed on initialization
+    base: str  # index.html is completed on read
+    ext: str
+
+    @property
+    def url(self):
+        return sum((self.scheme, self.domain, self.path, self.base, self.ext), "")
+
+    @property
+    def full_path(self):
+        return self.domain + self.path
+
+    @property
+    def file_name(self):
+        return self.base + self.ext or "index.html"
+
+    @property
+    def full_file_name(self):
+        return sum((self.domain, self.path, self.file_name), "")
+
+
+"""
+types of links:
+{scheme}://domain/path/base.ext
+path/base.ext           === {local_path}/{<}
+/path/base.ext          === {root_adress}{<}
+{scheme}://domain/path/ === {<}index.html
+{scheme}://domain/path  === {<}/index.html
+path                    === {local_path}/{<}/index.html
+path/                   === {local_path}/{<}index.html
+/path                   === {root_adress}/{<}/index.html
+/path/                  === {root_adress}/{<}index.html
+"""
 
 
 def path_build(codex_nom: str):
@@ -124,8 +164,9 @@ def extract_children(page: str, inter, wayback=False):
     if soup.html: soup = soup.html
     if wayback:
         soup = wayback_strip(soup)
+    local_path = inter if page.endswith(".html") else inter.rstrip("/") + f"/{page}"
     for tag in soup:
-        if isinstance(tag, bs4.Tag): extract_tag(tag, inter+ page.partition(".")[0])
+        if not isinstance(tag, bs4.NavigableString): extract_tag(tag, local_path)
 
 
 def extract_site(wayback=False, **kwargs):
