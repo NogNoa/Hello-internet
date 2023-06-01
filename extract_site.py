@@ -17,8 +17,8 @@ class Link:
     scheme: str  # terminating '://' is included
     domain: str  # terminating '/' is guranteed on initialization if not empty
     path: str  # ""
-    _base: str  # index.html is completed on read
-    _ext: str  # "" ext with the dot
+    base: str  # index.html is completed on read
+    ext: str  # "" ext with the dot
 
     @staticmethod
     def from_string(link: str, local_path=""):
@@ -34,7 +34,7 @@ class Link:
             domain = root_link.domain
             link = link[0]
             if link.startswith("/"):
-                link.strip("/")
+                link = link.strip("/")
             else:
                 link = local_path + link
         link = link.rsplit("/", 1)
@@ -42,30 +42,22 @@ class Link:
             path, file = link[0], link[1]
         else:
             path, file = ("", link[0]) if ("." in link[0]) else (link[0], "")
-        base, ext = file.split(".")
+        base, _, ext = file.partition(".")
         if ext: ext = "." + ext
-        path = path.rstrip("/") + "/"
+        if path: path = path.rstrip("/") + "/"
         return Link(scheme, domain, path, base, ext)
 
     @property
     def url(self):
-        return sum((self.scheme, self.domain, self.path, self._base, self._ext), "")
+        return "".join((self.scheme, self.domain, self.path, self.base, self.ext))
 
     @property
     def full_path(self):
         return self.domain + self.path
 
     @property
-    def base(self):
-        return self._base or "index"
-
-    @property
-    def ext(self):
-        return self._ext or ".html"
-
-    @property
     def file_name(self):
-        return self._base + self._ext
+        return self.base + self.ext
 
     @property
     def full_file_name(self):
@@ -85,13 +77,14 @@ path/                   === {local_path}/{<}index.html
 /path/                  === {root_adress}/{<}index.html
 base.ext                === {local_path}/{<}
 /base.ext               === {root_adress}{<}
+path/extentionless
 """
 
 
 def path_build(path: str):
     print(f"folder: {path}")
     try:
-        os.mkdir(path)
+        os.makedirs(path)
     except FileExistsError:
         pass
 
@@ -101,6 +94,9 @@ def save_as(page: Link, wayback: bool):
     sleep(random.random() * 10)
     resp = requests.get(page.url)
     if resp.text.lower().startswith(("<!doctype html>", "<html>")):
+        if not page.ext:
+            page.path += page.base.rstrip("/") + "/"
+            page.base, page.ext = "index", ".html"
         extract_children(page, wayback)
     if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
         print(codex_nom)
@@ -111,7 +107,7 @@ def save_as(page: Link, wayback: bool):
     print(codex_nom)
 
 
-def save_as_not_html(page: Link, wayback: bool):
+def save_as_not_html(page: Link):
     codex_nom = page.full_file_name
     if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
         print(codex_nom)
@@ -179,11 +175,15 @@ def extract_tag(tag: bs4.element, local_path='', wayback: bool = False):
         return
     link = link.partition("#")[0].partition("?")[0]
     link = Link.from_string(link, local_path)
+    if link.domain != root_link.domain:
+        return
     if link.full_file_name in memory:
         return
     memory.add(link.full_file_name)
-
-    save_as(link, wayback)
+    if link.ext and link.ext != ".html":
+        save_as_not_html(link)
+    else:
+        save_as(link, wayback)
 
 
 def extract_children(page: Link, wayback=False):
@@ -192,7 +192,7 @@ def extract_children(page: Link, wayback=False):
     if wayback:
         soup = wayback_strip(soup)
     for tag in soup:
-        if not isinstance(tag, bs4.NavigableString): extract_tag(tag, page.path)
+        extract_tag(tag, page.path)
 
 
 def extract_site(wayback=False):
@@ -203,7 +203,7 @@ def extract_site(wayback=False):
     if wayback:
         soup = wayback_strip(soup)
     for tag in soup:
-        if isinstance(tag, bs4.Tag): extract_tag(tag, root_link.domain + root_link.path, wayback)
+        extract_tag(tag, root_link.path, wayback)
     with open(codex_nom, "w+", encoding="utf-8") as codex:
         codex.write(str(soup))
     print(codex_nom)
@@ -211,7 +211,7 @@ def extract_site(wayback=False):
 
 if __name__ == "__main__":
     root_link = Link.from_string(argv[1])
-    root_link.scheme |= root_scheme
+    root_link.scheme = root_link.scheme or root_scheme
     memory = {root_link.full_file_name, root_link.full_file_name + "index.html", "/"}
     os.chdir(argv[2])
     if argv[3].startswith('dir'):
