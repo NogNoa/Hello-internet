@@ -16,9 +16,9 @@ logging.basicConfig(filename="extract-site.log")
 class Link:
     scheme: str  # terminating '://' is included
     domain: str  # terminating '/' is guranteed on initialization if not empty
-    path: str    # ""
-    base: str    # index.html is completed on read
-    ext: str     # ""
+    path: str  # ""
+    _base: str  # index.html is completed on read
+    _ext: str  # "" ext with the dot
 
     @staticmethod
     def from_string(link: str, local_path=""):
@@ -31,36 +31,45 @@ class Link:
             domain += "/"
         else:
             scheme = root_scheme
-            domain = root_adress
+            domain = root_link.domain
             link = link[0]
-        if link.startswith("/"):
-            link.strip("/")
-        else:
-            link = local_path + link
+            if link.startswith("/"):
+                link.strip("/")
+            else:
+                link = local_path + link
         link = link.rsplit("/", 1)
         if len(link) == 2 and link[1]:
             path, file = link[0], link[1]
         else:
             path, file = ("", link[0]) if ("." in link[0]) else (link[0], "")
         base, ext = file.split(".")
+        if ext: ext = "." + ext
         path = path.rstrip("/") + "/"
         return Link(scheme, domain, path, base, ext)
 
     @property
     def url(self):
-        return sum((self.scheme, self.domain, self.path, self.base, self.ext), "")
+        return sum((self.scheme, self.domain, self.path, self._base, self._ext), "")
 
     @property
     def full_path(self):
         return self.domain + self.path
 
     @property
+    def base(self):
+        return self._base or "index"
+
+    @property
+    def ext(self):
+        return self._ext or ".html"
+
+    @property
     def file_name(self):
-        return self.base + self.ext or "index.html"
+        return self._base + self._ext
 
     @property
     def full_file_name(self):
-        return sum((self.domain, self.path, self.file_name), "")
+        return self.full_path + self.file_name
 
 
 """
@@ -79,35 +88,24 @@ base.ext                === {local_path}/{<}
 """
 
 
-def path_build(codex_nom: str):
-    folder_nom = ""
-    for fldr in codex_nom.split("/")[:-1]:
-        folder_nom += f"{fldr}/"
-        print(f"folder: {folder_nom}")
-        try:
-            os.mkdir(folder_nom)
-            print(folder_nom)
-        except FileExistsError:
-            pass
+def path_build(path: str):
+    print(f"folder: {path}")
+    try:
+        os.mkdir(path)
+    except FileExistsError:
+        pass
 
 
-def save_as(name: str, inter: str = ''):
-    if inter: inter = inter.rstrip("/") + "/"
-    local_path = inter + name
+def save_as(page: Link, wayback: bool):
+    codex_nom = page.full_file_name
     sleep(random.random() * 10)
-    resp = requests.get(root_scheme + local_path)
-    codex_nom = local_path
+    resp = requests.get(page.url)
     if resp.text.lower().startswith(("<!doctype html>", "<html>")):
-        if local_path == root_adress + "index.html":
-            return
-        extract_children(name, inter)
-        if not name.endswith(".html"):
-            codex_nom = local_path.rstrip("/") + "index.html"
+        extract_children(page, wayback)
     if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
         print(codex_nom)
         return
-    if name.split("/")[:-1]:
-        path_build(local_path)
+    path_build(page.full_path)
     with open(codex_nom, "wb+") as codex:
         codex.write(resp.content)
     print(codex_nom)
@@ -129,9 +127,8 @@ def wayback_strip(soup: bs4.BeautifulSoup) -> bs4.BeautifulSoup:
     return soup
 
 
-def extract_directory(local_path: str, wayback=False):
-    url = root_adress + local_path
-    soup = soup_init(url=url)
+def extract_directory(local_path: str = "", wayback=False):
+    soup = soup_init(url=local_path)
     try:
         os.mkdir(local_path)
     except FileExistsError:
@@ -141,11 +138,12 @@ def extract_directory(local_path: str, wayback=False):
     for img in soup.body.find_all("img"):
         link = img.next.next["href"]
         if not link:
-            print(f'url="{url}", element="{img.next}"')
+            print(f'url="{local_path}", element="{img.next}"')
             continue
+        file = Link.from_string(link, local_path)
         suffix = img["src"].split("/")[-1]
         if suffix in {"unknown.gif", "compressed.gif", "tar.gif"}:
-            save_as(link, local_path)
+            save_as(file, wayback)
         elif suffix == "folder.gif":
             extract_directory(local_path + link)
         elif suffix in {"blank.gif", "back.gif"}:
@@ -154,7 +152,7 @@ def extract_directory(local_path: str, wayback=False):
             print(suffix)
 
 
-def extract_tag(tag: bs4.element, local_path=''):
+def extract_tag(tag: bs4.element, local_path='', wayback: bool = False):
     try:
         for sub in tag.children:
             if not isinstance(sub, bs4.NavigableString): extract_tag(sub, local_path)
@@ -167,64 +165,42 @@ def extract_tag(tag: bs4.element, local_path=''):
     except AttributeError:
         return
     link = link.partition("#")[0].partition("?")[0]
-    if any((link in memory, local_path + link in memory, root_adress + link in memory)):
+    link = Link.from_string(link, local_path)
+    if link.full_file_name in memory:
         return
-    if link.startswith("http"):
-        memory.add(link)
-        adrs = link.split("/")
-        domain = (adrs[2]) + "/"
-        if domain == root_adress:
-            path = "/".join(adrs[3:-1]) + "/"
-            name = adrs[-1]
-            save_as(path + name, domain)
-        else:
-            return
-    elif link.startswith("/"):
-        memory.add(root_adress + link)
-        save_as(link)
-    else:
-        memory.add(local_path + link)
-        save_as(link, local_path)
+    memory.add(link.full_file_name)
+    save_as(link, wayback)
 
 
-def extract_children(page: str, inter, wayback=False):
-    soup: bs4.BeautifulSoup = soup_init(url=root_scheme + inter + page)
-    if soup.html: soup = soup.html
-    if wayback:
-        soup = wayback_strip(soup)
-    local_path = inter if page.endswith(".html") else inter.rstrip("/") + f"/{page}"
-    for tag in soup:
-        if not isinstance(tag, bs4.NavigableString): extract_tag(tag, local_path)
-
-
-def extract_site(wayback=False, **kwargs):
-    codex_nom = root_adress + "index.html"
-    path_build(codex_nom)
-    soup: bs4.BeautifulSoup = soup_init(url=root_scheme + root_adress)
+def extract_children(page: Link, wayback=False):
+    soup: bs4.BeautifulSoup = soup_init(url=page.url)
     if soup.html: soup = soup.html
     if wayback:
         soup = wayback_strip(soup)
     for tag in soup:
-        if isinstance(tag, bs4.Tag): extract_tag(tag, root_adress)
+        if not isinstance(tag, bs4.NavigableString): extract_tag(tag, page.path)
+
+
+def extract_site(wayback=False):
+    codex_nom = root_link.full_file_name
+    path_build(root_link.full_path)
+    soup: bs4.BeautifulSoup = soup_init(url=root_link.url)
+    if soup.html: soup = soup.html
+    if wayback:
+        soup = wayback_strip(soup)
+    for tag in soup:
+        if isinstance(tag, bs4.Tag): extract_tag(tag, root_link.domain + root_link.path, wayback)
     with open(codex_nom, "w+", encoding="utf-8") as codex:
         codex.write(str(soup))
     print(codex_nom)
 
 
 if __name__ == "__main__":
-    root_adress = argv[1]
-    root_scheme, _, root_adress = root_adress.partition("://")
-    if root_adress:
-        root_scheme += "://"
-    else:
-        root_adress = root_scheme
-        root_scheme = "http://"
-    root_adress = root_adress.rstrip("/") + "/"
-    memory = {root_adress, "/"}
+    root_link = Link.from_string(argv[1])
+    root_link.scheme |= root_scheme
+    memory = {root_link.full_file_name, root_link.full_file_name + "index.html", "/"}
     os.chdir(argv[2])
     if argv[3].startswith('dir'):
-        extract_directory(argv[1])
+        extract_directory(root_link.full_path)
     elif argv[3].startswith('page'):
         extract_site()
-
-# todo: infinite loop
