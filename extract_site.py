@@ -21,7 +21,8 @@ class Link:
     ext: str     # ""
 
     @staticmethod
-    def from_string(link: str):
+    def from_string(link: str, local_path=""):
+        # local path without the domain
         link = link.partition("://")
         if link[2]:
             scheme, link = link[0], link[2]
@@ -29,14 +30,18 @@ class Link:
             domain, _, link = link.partition("/")
             domain += "/"
         else:
-            link = link[0]
-        if link.startswith("/"):
             scheme = root_scheme
             domain = root_adress
+            link = link[0]
+        if link.startswith("/"):
+            path = ""
             link.strip("/")
+        else:
+            path = local_path
         link = link.rsplit("/", 1)
         if len(link) == 2 and link[1]:
-            path, file = link[0], link[1]
+            path += link[0]
+            file = link[1]
         else:
             path = link[0]
             file = ""
