@@ -111,6 +111,19 @@ def save_as(page: Link, wayback: bool):
     print(codex_nom)
 
 
+def save_as_not_html(page: Link, wayback: bool):
+    codex_nom = page.full_file_name
+    if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
+        print(codex_nom)
+        return
+    sleep(random.random() * 10)
+    resp = requests.get(page.url)
+    path_build(page.full_path)
+    with open(codex_nom, "wb+") as codex:
+        codex.write(resp.content)
+    print(codex_nom)
+
+
 def wayback_strip(soup: bs4.BeautifulSoup) -> bs4.BeautifulSoup:
     for tag in soup.head:
         tag.extract()
@@ -169,6 +182,7 @@ def extract_tag(tag: bs4.element, local_path='', wayback: bool = False):
     if link.full_file_name in memory:
         return
     memory.add(link.full_file_name)
+
     save_as(link, wayback)
 
 
