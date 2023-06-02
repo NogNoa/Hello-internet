@@ -42,6 +42,8 @@ class Link:
             path, file = link[0], link[1]
         else:
             path, file = ("", link[0]) if ("." in link[0]) else (link[0], "")
+        if file == "..":
+            path = path.rsplit("/")[0]
         base, _, ext = file.partition(".")
         if ext: ext = "." + ext
         if path: path = path.rstrip("/") + "/"
@@ -90,7 +92,6 @@ def path_build(path: str):
 
 
 def save_as(page: Link, wayback: bool):
-    codex_nom = page.full_file_name
     sleep(random.random() * 10)
     resp = requests.get(page.url)
     if resp.text.lower().startswith(("<!doctype html>", "<html>")):
@@ -98,13 +99,17 @@ def save_as(page: Link, wayback: bool):
             page.path += page.base.rstrip("/") + "/"
             page.base, page.ext = "index", ".html"
         extract_children(page, wayback)
-    if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
-        print(codex_nom)
+    if os.path.exists(page.full_file_name) and os.path.getsize(page.full_file_name):
+        print(page.full_file_name)
         return
+    if not page.ext:
+        path = page.path.split("/")
+        page.path = "/".join(path[:-2]) + "/"
+        page.base = path[-2]
     path_build(page.full_path)
-    with open(codex_nom, "wb+") as codex:
+    with open(page.full_file_name, "wb+") as codex:
         codex.write(resp.content)
-    print(codex_nom)
+    print(page.full_file_name)
 
 
 def save_as_not_html(page: Link):
