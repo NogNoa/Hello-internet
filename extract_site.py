@@ -43,7 +43,8 @@ class Link:
         else:
             path, file = ("", link[0]) if ("." in link[0]) else (link[0], "")
         if file == "..":
-            path = path.rsplit("/")[0]
+            path = path.rsplit("/", 2)[0]
+            file = ""
         base, _, ext = file.partition(".")
         if ext: ext = "." + ext
         if path: path = path.rstrip("/") + "/"
@@ -96,16 +97,17 @@ def save_as(page: Link, wayback: bool):
     resp = requests.get(page.url)
     if resp.text.lower().startswith(("<!doctype html>", "<html>")):
         if not page.ext:
-            page.path += page.base.rstrip("/") + "/"
+            page.path = (page.path + page.base).rstrip("/") + "/"
             page.base, page.ext = "index", ".html"
         extract_children(page, wayback)
+    if not page.base:
+        page.path = page.path.split("/")
+        page.base = page.path[-2]
+        page.path = "/".join(page.path[:-2])
+        if page.path: page.path += "/"
     if os.path.exists(page.full_file_name) and os.path.getsize(page.full_file_name):
         print(page.full_file_name)
         return
-    if not page.ext:
-        path = page.path.split("/")
-        page.path = "/".join(path[:-2]) + "/"
-        page.base = path[-2]
     path_build(page.full_path)
     with open(page.full_file_name, "wb+") as codex:
         codex.write(resp.content)
@@ -179,10 +181,11 @@ def extract_tag(tag: bs4.element, local_path='', wayback: bool = False):
     except AttributeError:
         return
     link = link.partition("#")[0].partition("?")[0]
-    link = Link.from_string(link, local_path)
-    if link.domain != root_link.domain:
+    if link:
+        link = Link.from_string(link, local_path)
+    else:
         return
-    if link.full_file_name in memory:
+    if link.domain != root_link.domain or link.full_file_name in memory:
         return
     memory.add(link.full_file_name)
     if link.ext and link.ext != ".html":
@@ -197,7 +200,7 @@ def extract_children(page: Link, wayback=False):
     if wayback:
         soup = wayback_strip(soup)
     for tag in soup:
-        extract_tag(tag, page.path)
+        if not isinstance(tag, bs4.NavigableString): extract_tag(tag, page.path)
 
 
 def extract_site(wayback=False):
@@ -208,7 +211,7 @@ def extract_site(wayback=False):
     if wayback:
         soup = wayback_strip(soup)
     for tag in soup:
-        extract_tag(tag, root_link.path, wayback)
+        if not isinstance(tag, bs4.NavigableString): extract_tag(tag, root_link.path, wayback)
     with open(codex_nom, "w+", encoding="utf-8") as codex:
         codex.write(str(soup))
     print(codex_nom)
