@@ -16,6 +16,7 @@ logging.basicConfig(filename="extract-site.log")
 class Link:
     scheme: str  # terminating '://' is included
     domain: str  # terminating '/' is guranteed on initialization if not empty
+    local: str  # ""
     path: str  # ""
     base: str  # index.html is completed on read
     ext: str  # "" ext with the dot
@@ -35,8 +36,7 @@ class Link:
             link = link[0]
             if link.startswith("/"):
                 link = link.strip("/")
-            else:
-                link = local_path + link
+                local_path = ""
         link = link.rsplit("/", 1)
         if len(link) == 2 and link[1]:
             path, file = link[0], link[1]
@@ -48,15 +48,19 @@ class Link:
         base, _, ext = file.partition(".")
         if ext: ext = "." + ext
         if path: path = path.rstrip("/") + "/"
-        return Link(scheme, domain, path, base, ext)
+        return Link(scheme, domain, local_path, path, base, ext)
+
+    @property
+    def absolute_url(self):
+        return "".join((self.scheme, self.domain, self.path, self.file_name))
 
     @property
     def url(self):
-        return "".join((self.scheme, self.domain, self.path, self.base, self.ext))
+        return self.scheme + self.full_file_name
 
     @property
     def full_path(self):
-        return self.domain + self.path
+        return self.domain + self.local + self.path
 
     @property
     def file_name(self):
@@ -95,6 +99,12 @@ def path_build(path: str):
 def save_as(page: Link, wayback: bool):
     sleep(random.random() * 10)
     resp = requests.get(page.url)
+    if resp.status_code != 200 and page.url != page.absolute_url:
+        resp = requests.get(page.absolute_url)
+        if resp.status_code == 200:
+            page.local = ""
+        else:
+            raise ConnectionError(resp)
     if resp.text.lower().startswith(("<!doctype html>", "<html>")):
         if not page.ext:
             page.path = (page.path + page.base).rstrip("/") + "/"
