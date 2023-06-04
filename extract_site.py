@@ -37,6 +37,12 @@ class Link:
             if link.startswith("/"):
                 link = link.strip("/")
                 local_path = ""
+        if link.startswith(".."):
+            if local_path:
+                local_path = local_path.rsplit("/", 2)[0]
+                link = link.strip("./")
+            else:
+                logging.error("".join((scheme, domain, local_path, link)))
         link = link.rsplit("/", 1)
         if len(link) == 2 and link[1]:
             path, file = link[0], link[1]
