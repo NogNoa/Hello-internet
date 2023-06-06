@@ -59,10 +59,6 @@ class Link:
         return Link(scheme, domain, local_path, path, base, ext)
 
     @property
-    def absolute_url(self):
-        return "".join((self.scheme, self.domain, self.path, self.file_name))
-
-    @property
     def url(self):
         return self.scheme + self.full_file_name
 
@@ -111,15 +107,13 @@ def save_as(page: Link, wayback: bool):
         return
     sleep(random.random() + max((0, req_time + 4 - time.time())))
     resp = requests.get(page.url)
-    if resp.status_code != 200 and page.url != page.absolute_url:
+    if resp.status_code != 200 and page.local:
+        page.local = ""
         sleep(random.random() + max((0, req_time + 4 - time.time())))
-        resp = requests.get(page.absolute_url)
-        if resp.status_code == 200:
-            page.local = ""
-        else:
+        resp = requests.get(page.url)
+        if resp.status_code != 200:
             raise ConnectionError(resp)
     req_time = time.time()
-    print(req_time)
     if resp.text.lower().startswith(("<!doctype html>", "<html>")):
         if not page.ext:
             page.path = (page.path + page.base).rstrip("/") + "/"
@@ -146,15 +140,16 @@ def save_as_not_html(page: Link):
         return
     sleep(random.random() + max((0, req_time + 4 - time.time())))
     resp = requests.get(page.url)
-    if resp.status_code != 200 and page.url != page.absolute_url:
+    if resp.status_code != 200 and page.local:
+        page.local = ""
         sleep(random.random() + max((0, req_time + 4 - time.time())))
-        resp = requests.get(page.absolute_url)
-        if resp.status_code == 200:
-            page.local = ""
-        else:
+        resp = requests.get(page.url)
+        if resp.status_code != 200:
             raise ConnectionError(resp)
     req_time = time.time()
-    print(req_time)
+    if os.path.exists(page.full_file_name) and os.path.getsize(page.full_file_name):
+        print(page.full_file_name)
+        return
     path_build(page.full_path)
     with open(page.full_file_name, "wb+") as codex:
         codex.write(resp.content)
