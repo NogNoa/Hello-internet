@@ -13,7 +13,7 @@ import logging
 root_scheme = "https://"
 logging.basicConfig(filename="extract-site.log", level="debug")
 req_time = time.time()
-code_dir_pattern = r"(([\"'])(code|js)/.*)\2"
+code_dir_pattern = r"([\"'])((code|js)/.*)\1"
 
 
 @dataclass
@@ -116,12 +116,12 @@ def save_as(page: Link, wayback: bool):
         if resp.status_code != 200:
             raise ConnectionError(resp)
     req_time = time.time()
-    if page.ext == "html" or resp.text.lower().startswith(("<!doctype html>", "<html>")):
+    if page.ext == ".html" or resp.text.lower().startswith(("<!doctype html>", "<html>")):
         if not page.ext:
             page.path = (page.path + page.base).rstrip("/") + "/"
             page.base, page.ext = "index", ".html"
         extract_children(page, wayback)
-    elif page.ext == "js":
+    elif page.ext == ".js":
         extract_js(resp.text, wayback=wayback)
     if not page.base:
         page.path = page.path.split("/")
@@ -206,7 +206,7 @@ def extract_link(link: str, local_path: str = "", wayback: bool = False):
 
 def extract_js(script: str, local_path: str = "", wayback: bool = False):
     if fldri := re.findall(code_dir_pattern, script):
-        for link in (fldr[0] for fldr in fldri):
+        for link in (fldr[1] for fldr in fldri):
             extract_link(link, local_path, wayback)
 
 
