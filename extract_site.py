@@ -1,4 +1,5 @@
 import os
+import re
 import time
 from dataclasses import dataclass
 from sys import argv
@@ -12,6 +13,7 @@ import logging
 root_scheme = "https://"
 logging.basicConfig(filename="extract-site.log", level="debug")
 req_time = time.time()
+code_dir_pattern = r"(([\"'])(code|js)/.*)\2"
 
 
 @dataclass
@@ -182,6 +184,8 @@ def extract_tag(tag: bs4.element, local_path='', wayback: bool = False):
             link = tag["href"]
         elif tag.has_attr("src"):
             link = tag["src"]
+        elif tag.name == "script":
+            link = extract_js(tag.text)
         else:
             return
     except AttributeError:
@@ -195,6 +199,11 @@ def extract_tag(tag: bs4.element, local_path='', wayback: bool = False):
         return
     memory.add(link.full_file_name)
     save_as(link, wayback)
+
+
+def extract_js(script: str):
+    if fldri := re.findall(code_dir_pattern, script):
+        return (fldr[0] for fldr in fldri)
 
 
 def extract_children(page: Link, wayback=False):
