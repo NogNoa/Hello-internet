@@ -106,6 +106,9 @@ def path_build(path: str):
 
 def save_as(page: Link, wayback: bool):
     global req_time
+    if os.path.exists(page.full_file_name) and os.path.getsize(page.full_file_name):
+        print(page.full_file_name)
+        return
     sleep(random.random() + max((0, req_time + 4 - time.time())))
     resp = requests.get(page.url)
     if resp.status_code != 200 and page.url != page.absolute_url:
@@ -138,9 +141,8 @@ def save_as(page: Link, wayback: bool):
 
 def save_as_not_html(page: Link):
     global req_time
-    codex_nom = page.full_file_name
-    if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
-        print(codex_nom)
+    if os.path.exists(page.full_file_name) and os.path.getsize(page.full_file_name):
+        print(page.full_file_name)
         return
     sleep(random.random() + max((0, req_time + 4 - time.time())))
     resp = requests.get(page.url)
@@ -154,9 +156,9 @@ def save_as_not_html(page: Link):
     req_time = time.time()
     print(req_time)
     path_build(page.full_path)
-    with open(codex_nom, "wb+") as codex:
+    with open(page.full_file_name, "wb+") as codex:
         codex.write(resp.content)
-    print(codex_nom)
+    print(page.full_file_name)
 
 
 def wayback_strip(soup: bs4.BeautifulSoup) -> bs4.BeautifulSoup:
