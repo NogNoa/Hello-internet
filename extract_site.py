@@ -133,29 +133,6 @@ def save_as(page: Link, wayback: bool):
     print(page.full_file_name)
 
 
-def save_as_not_html(page: Link):
-    global req_time
-    if os.path.exists(page.full_file_name) and os.path.getsize(page.full_file_name):
-        print(page.full_file_name)
-        return
-    sleep(random.random() + max((0, req_time + 4 - time.time())))
-    resp = requests.get(page.url)
-    if resp.status_code != 200 and page.local:
-        page.local = ""
-        sleep(random.random() + max((0, req_time + 4 - time.time())))
-        resp = requests.get(page.url)
-        if resp.status_code != 200:
-            raise ConnectionError(resp)
-    req_time = time.time()
-    if os.path.exists(page.full_file_name) and os.path.getsize(page.full_file_name):
-        print(page.full_file_name)
-        return
-    path_build(page.full_path)
-    with open(page.full_file_name, "wb+") as codex:
-        codex.write(resp.content)
-    print(page.full_file_name)
-
-
 def wayback_strip(soup: bs4.BeautifulSoup) -> bs4.BeautifulSoup:
     for tag in soup.head:
         tag.extract()
@@ -217,10 +194,7 @@ def extract_tag(tag: bs4.element, local_path='', wayback: bool = False):
     if link.domain != root_link.domain or link.full_file_name in memory:
         return
     memory.add(link.full_file_name)
-    if link.ext and link.ext != ".html":
-        save_as_not_html(link)
-    else:
-        save_as(link, wayback)
+    save_as(link, wayback)
 
 
 def extract_children(page: Link, wayback=False):
