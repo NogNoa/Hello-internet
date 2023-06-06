@@ -116,11 +116,15 @@ def save_as(page: Link, wayback: bool):
         if resp.status_code != 200:
             raise ConnectionError(resp)
     req_time = time.time()
-    if resp.text.lower().startswith(("<!doctype html>", "<html>")):
+    if page.ext == "html" or resp.text.lower().startswith(("<!doctype html>", "<html>")):
         if not page.ext:
             page.path = (page.path + page.base).rstrip("/") + "/"
             page.base, page.ext = "index", ".html"
         extract_children(page, wayback)
+    elif page.ext == "js":
+        if lnki := extract_js(resp.text):
+            for link in lnki:
+                extract_link(link, wayback=wayback)
     if not page.base:
         page.path = page.path.split("/")
         page.base = page.path[-2]
@@ -181,20 +185,22 @@ def extract_tag(tag: bs4.element, local_path='', wayback: bool = False):
         for sub in tag.children:
             if not isinstance(sub, bs4.NavigableString): extract_tag(sub, local_path)
         if tag.has_attr("href"):
-            link = tag["href"]
+            extract_link(tag["href"], local_path, wayback,)
         elif tag.has_attr("src"):
-            link = tag["src"]
+            extract_link(tag["src"], local_path, wayback,)
         elif tag.name == "script":
-            link = extract_js(tag.text)
-        else:
-            return
+            if lnki := extract_js(tag.text):
+                for link in lnki:
+                    extract_link(link, local_path, wayback,)
     except AttributeError:
         return
+
+
+def extract_link(link: str, local_path: str = "", wayback: bool = False):
     link = link.partition("#")[0].partition("?")[0]
     if link:
         link = Link.from_string(link, local_path)
-    else:
-        return
+    else: return
     if link.domain != root_link.domain or link.full_file_name in memory:
         return
     memory.add(link.full_file_name)
