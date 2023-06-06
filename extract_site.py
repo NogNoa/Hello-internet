@@ -39,7 +39,7 @@ class Link:
                 local_path = ""
         if link.startswith(".."):
             if local_path:
-                local_path = local_path.rsplit("/", 2)[0]
+                local_path = "/".join(f"/{local_path}".split("/")[:-2]).strip("/")
                 link = link.strip("./")
             else:
                 logging.error("".join((scheme, domain, local_path, link)))
@@ -49,7 +49,7 @@ class Link:
         else:
             path, file = ("", link[0]) if ("." in link[0]) else (link[0], "")
         if file == "..":
-            path = path.rsplit("/", 2)[0]
+            path = "/".join(f"/{path}".split("/")[:-2]).strip("/")
             file = ""
         base, _, ext = file.partition(".")
         if ext: ext = "." + ext
