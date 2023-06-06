@@ -1,4 +1,5 @@
 import os
+import time
 from dataclasses import dataclass
 from sys import argv
 
@@ -9,7 +10,8 @@ import bs4
 import logging
 
 root_scheme = "https://"
-logging.basicConfig(filename="extract-site.log")
+logging.basicConfig(filename="extract-site.log", level="debug")
+req_time = time.time()
 
 
 @dataclass
@@ -39,7 +41,7 @@ class Link:
                 local_path = ""
         if link.startswith(".."):
             if local_path:
-                local_path = "/".join(f"/{local_path}".split("/")[:-2]).strip("/")
+                local_path = "/".join(f"{local_path}".split("/")[:-2])
                 link = link.strip("./")
             else:
                 logging.error("".join((scheme, domain, local_path, link)))
@@ -49,7 +51,7 @@ class Link:
         else:
             path, file = ("", link[0]) if ("." in link[0]) else (link[0], "")
         if file == "..":
-            path = "/".join(f"/{path}".split("/")[:-2]).strip("/")
+            path = "/".join(f"{path}".split("/")[:-2])
             file = ""
         base, _, ext = file.partition(".")
         if ext: ext = "." + ext
@@ -103,14 +105,18 @@ def path_build(path: str):
 
 
 def save_as(page: Link, wayback: bool):
-    sleep(random.random() * 10)
+    global req_time
+    sleep(random.random() + max((0, req_time + 4 - time.time())))
     resp = requests.get(page.url)
     if resp.status_code != 200 and page.url != page.absolute_url:
+        sleep(random.random() + max((0, req_time + 4 - time.time())))
         resp = requests.get(page.absolute_url)
         if resp.status_code == 200:
             page.local = ""
         else:
             raise ConnectionError(resp)
+    req_time = time.time()
+    print(req_time)
     if resp.text.lower().startswith(("<!doctype html>", "<html>")):
         if not page.ext:
             page.path = (page.path + page.base).rstrip("/") + "/"
@@ -131,12 +137,22 @@ def save_as(page: Link, wayback: bool):
 
 
 def save_as_not_html(page: Link):
+    global req_time
     codex_nom = page.full_file_name
     if os.path.exists(codex_nom) and os.path.getsize(codex_nom):
         print(codex_nom)
         return
-    sleep(random.random() * 10)
+    sleep(random.random() + max((0, req_time + 4 - time.time())))
     resp = requests.get(page.url)
+    if resp.status_code != 200 and page.url != page.absolute_url:
+        sleep(random.random() + max((0, req_time + 4 - time.time())))
+        resp = requests.get(page.absolute_url)
+        if resp.status_code == 200:
+            page.local = ""
+        else:
+            raise ConnectionError(resp)
+    req_time = time.time()
+    print(req_time)
     path_build(page.full_path)
     with open(codex_nom, "wb+") as codex:
         codex.write(resp.content)
