@@ -122,9 +122,7 @@ def save_as(page: Link, wayback: bool):
             page.base, page.ext = "index", ".html"
         extract_children(page, wayback)
     elif page.ext == "js":
-        if lnki := extract_js(resp.text):
-            for link in lnki:
-                extract_link(link, wayback=wayback)
+        extract_js(resp.text, wayback=wayback)
     if not page.base:
         page.path = page.path.split("/")
         page.base = page.path[-2]
@@ -185,13 +183,11 @@ def extract_tag(tag: bs4.element, local_path='', wayback: bool = False):
         for sub in tag.children:
             if not isinstance(sub, bs4.NavigableString): extract_tag(sub, local_path)
         if tag.has_attr("href"):
-            extract_link(tag["href"], local_path, wayback,)
+            extract_link(tag["href"], local_path, wayback, )
         elif tag.has_attr("src"):
-            extract_link(tag["src"], local_path, wayback,)
+            extract_link(tag["src"], local_path, wayback, )
         elif tag.name == "script":
-            if lnki := extract_js(tag.text):
-                for link in lnki:
-                    extract_link(link, local_path, wayback,)
+            extract_js(tag.text, local_path, wayback)
     except AttributeError:
         return
 
@@ -200,16 +196,18 @@ def extract_link(link: str, local_path: str = "", wayback: bool = False):
     link = link.partition("#")[0].partition("?")[0]
     if link:
         link = Link.from_string(link, local_path)
-    else: return
+    else:
+        return
     if link.domain != root_link.domain or link.full_file_name in memory:
         return
     memory.add(link.full_file_name)
     save_as(link, wayback)
 
 
-def extract_js(script: str):
+def extract_js(script: str, local_path: str = "", wayback: bool = False):
     if fldri := re.findall(code_dir_pattern, script):
-        return (fldr[0] for fldr in fldri)
+        for link in (fldr[0] for fldr in fldri):
+            extract_link(link, local_path, wayback)
 
 
 def extract_children(page: Link, wayback=False):
