@@ -13,7 +13,7 @@ import logging
 root_scheme = "https://"
 logging.basicConfig(filename="extract-site.log", level="debug")
 req_time = time.time()
-code_dir_pattern = r"([\"'])((code|js)/.*)\1"
+code_dir_pattern = r"([\"'])((code|js|img|css)/.*?)\\?\1"
 
 
 @dataclass
@@ -43,7 +43,7 @@ class Link:
                 local_path = ""
         if link.startswith(".."):
             if local_path:
-                local_path = "/".join(f"{local_path}".split("/")[:-2])
+                local_path = "/".join(f"{local_path}".split("/")[:-2]) + "/"
                 link = link.strip("./")
             else:
                 logging.error("".join((scheme, domain, local_path, link)))
@@ -65,8 +65,12 @@ class Link:
         return self.scheme + self.full_file_name
 
     @property
+    def inter(self):
+        return self.local + self.path
+
+    @property
     def full_path(self):
-        return self.domain + self.local + self.path
+        return self.domain + self.inter
 
     @property
     def file_name(self):
@@ -95,9 +99,9 @@ path/extentionless
 
 
 def path_build(path: str):
-    print(f"folder: {path}")
     try:
         os.makedirs(path)
+        print(f"folder: {path}")
     except FileExistsError:
         pass
 
@@ -114,7 +118,8 @@ def save_as(page: Link, wayback: bool):
         sleep(random.random() + max((0, req_time + 4 - time.time())))
         resp = requests.get(page.url)
         if resp.status_code != 200:
-            raise ConnectionError(resp)
+            print(f"connection error: {page.url}")
+            return
     req_time = time.time()
     if page.ext == ".html" or resp.text.lower().startswith(("<!doctype html>", "<html>")):
         if not page.ext:
@@ -122,7 +127,8 @@ def save_as(page: Link, wayback: bool):
             page.base, page.ext = "index", ".html"
         extract_children(page, wayback)
     elif page.ext == ".js":
-        extract_js(resp.text, wayback=wayback)
+        print(page.url)
+        extract_js(resp.text, page.inter, wayback=wayback)
     if not page.base:
         page.path = page.path.split("/")
         page.base = page.path[-2]
@@ -206,7 +212,7 @@ def extract_link(link: str, local_path: str = "", wayback: bool = False):
 
 def extract_js(script: str, local_path: str = "", wayback: bool = False):
     if fldri := re.findall(code_dir_pattern, script):
-        for link in (fldr[1] for fldr in fldri):
+        for link in (fldr[1] for fldr in set(fldri)):
             extract_link(link, local_path, wayback)
 
 
@@ -216,7 +222,7 @@ def extract_children(page: Link, wayback=False):
     if wayback:
         soup = wayback_strip(soup)
     for tag in soup:
-        if not isinstance(tag, bs4.NavigableString): extract_tag(tag, page.path)
+        if not isinstance(tag, bs4.NavigableString): extract_tag(tag, page.inter)
 
 
 def extract_site(wayback=False):
@@ -242,3 +248,5 @@ if __name__ == "__main__":
         extract_directory(root_link.full_path)
     elif argv[3].startswith('page'):
         extract_site()
+
+# todo: mailto:
